@@ -10,6 +10,7 @@ const columns = [
     links: [
       { href: '/catalog/', label: 'Все модели' },
       { href: '/tipy-plenki/', label: 'Типы плёнки' },
+      { href: '/plenka-na-otrez/', label: 'Плёнка на отрез' },
       { href: '/#populyarnye', label: 'Популярные модели' },
     ],
   },
@@ -57,7 +58,7 @@ const columns = [
       <h2 class="footer__title">Связаться</h2>
       <ul>
         <li><a href={site.telegram} target="_blank" rel="noopener noreferrer">{site.telegramHandle}</a></li>
-        <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+        {site.email && <li><a href={`mailto:${site.email}`}>{site.email}</a></li>}
         <li><span class="muted">{site.city}</span></li>
       </ul>
     </div>

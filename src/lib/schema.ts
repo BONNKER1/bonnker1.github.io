@@ -14,7 +14,7 @@ export function organizationSchema() {
     name: site.name,
     url: site.url,
     description: site.description,
-    email: site.email,
+    ...(site.email ? { email: site.email } : {}),
     logo: canonicalUrl('/og-default.png'),
     sameAs: [site.marketplaces.wildberries, site.marketplaces.ozon, site.telegram],
     address: {
@@ -56,12 +56,14 @@ export function productSchema({
   film,
   lowPrice,
   highPrice,
+  offerCount = 3,
 }: {
   brand: CarBrand;
   model: CarModel;
   film: Film;
   lowPrice: number;
   highPrice: number;
+  offerCount?: number;
 }) {
   const name = `Тонировка ${brand.name} ${model.name} — ${film.name}`;
   const url = `/catalog/${brand.slug}/${model.slug}/`;
@@ -79,7 +81,7 @@ export function productSchema({
       priceCurrency: 'RUB',
       lowPrice,
       highPrice,
-      offerCount: 3,
+      offerCount,
       availability: 'https://schema.org/InStock',
       url: canonicalUrl(url),
     },

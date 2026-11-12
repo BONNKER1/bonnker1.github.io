@@ -78,8 +78,8 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
         <p class="eyebrow">Съёмная тонировка по лекалам</p>
         <h1>Тонировка под вашу машину — без клея и следов</h1>
         <p class="lead">
-          Силиконовая, жёсткая и классическая плёнка, вырезанная по лекалам.
-          Передние и задние полусферы или полный комплект. Ставится за пару минут,
+          Силиконовая, классическая, атермальная и жёсткая Premium плёнка, вырезанная по
+          лекалам. Передние и задние полусферы или полный комплект. Ставится за пару минут,
           снимается ещё быстрее.
         </p>
         <CarPicker />
@@ -120,14 +120,15 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
 
   <Section
     eyebrow="Ассортимент"
-    title="Три типа плёнки под разные задачи"
+    title="Четыре типа плёнки под разные задачи"
     description="Все варианты — съёмные и вырезаются по лекалу вашего авто. Разница в плотности, ресурсе и цене."
   >
-    <div class="grid grid--3">
+    <div class="grid grid--2">
       {films.map((film) => <FilmCard film={film} />)}
     </div>
     <p class="films-more">
       <a href="/tipy-plenki/">Сравнить типы плёнки подробнее →</a>
+      <a href="/plenka-na-otrez/">Плёнка на отрез — 1 750 ₽ за метр →</a>
     </p>
   </Section>
 
@@ -333,6 +334,9 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   }
 
   .films-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
     margin-top: var(--space-8);
   }
 

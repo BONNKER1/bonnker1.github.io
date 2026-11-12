@@ -3,7 +3,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import Button from '../../../components/Button.astro';
 import { brands, type CarBrand, type CarModel } from '../../../data/cars';
-import { films, filmSets, vltOptions, formatPrice, priceFor } from '../../../data/films';
+import {
+  films,
+  filmSets,
+  vltOptions,
+  windshieldSet,
+  formatPrice,
+  priceFor,
+} from '../../../data/films';
 import { site } from '../../../data/site';
 import { breadcrumbsSchema, faqSchema, productSchema } from '../../../lib/schema';
 
@@ -26,8 +33,14 @@ const brandLabel = brand.name.replace(/\s*\([^)]*\)/, '');
 const fullSet = filmSets.find((set) => set.id === 'full')!;
 const frontSet = filmSets.find((set) => set.id === 'front')!;
 
-const lowPrice = Math.min(...films.map((film) => priceFor(film, frontSet, 5)));
-const highPrice = Math.max(...films.map((film) => priceFor(film, fullSet, 70)));
+// Лобовое стекло продаём только для ВАЗ.
+const hasWindshield = brand.slug === 'lada';
+
+const lowPrice = Math.min(...films.map((film) => priceFor(film, frontSet)));
+const highPrice = Math.max(
+  ...films.map((film) => priceFor(film, fullSet)),
+  ...(hasWindshield ? [windshieldSet.price] : []),
+);
 
 const faq = [
   {
@@ -46,7 +59,21 @@ const faq = [
   },
 ];
 
-const product = { brand, model, film: films[2], lowPrice, highPrice };
+if (hasWindshield) {
+  faq.push({
+    question: 'Можно ли заказать плёнку на лобовое стекло?',
+    answer: `Да, для автомобилей ВАЗ доступен отдельный комплект на лобовое стекло — ${formatPrice(windshieldSet.price)}. Для других марок лобовое мы не продаём.`,
+  });
+}
+
+const product = {
+  brand,
+  model,
+  film: films[0],
+  lowPrice,
+  highPrice,
+  offerCount: filmSets.length + (hasWindshield ? 1 : 0),
+};
 
 const schemas = [
   breadcrumbsSchema([
@@ -61,14 +88,15 @@ const schemas = [
 
 const payload = {
   modelLabel: `${brandLabel} ${model.name}`,
-  films: films.map(({ id, name, basePrice }) => ({ id, name, basePrice })),
-  sets: filmSets.map(({ id, name, multiplier }) => ({ id, name, multiplier })),
+  films: films.map(({ id, name, basePrice, prices }) => ({ id, name, basePrice, prices })),
+  sets: filmSets.map(({ id, name }) => ({ id, name })),
+  windshield: hasWindshield ? windshieldSet : null,
   telegram: site.telegram,
 };
 ---
 <BaseLayout
   title={`Тонировка ${brandLabel} ${model.name} по лекалам`}
-  description={`Съёмная тонировка на ${brandLabel} ${model.name} (${model.years}). Лекала под передние и задние полусферы, силиконовая, жёсткая и классическая плёнка. Цена от ${formatPrice(lowPrice)}.`}
+  description={`Съёмная тонировка на ${brandLabel} ${model.name} (${model.years}). Лекала под передние и задние полусферы, полный комплект. Силиконовая, классическая, атермальная и жёсткая Premium плёнка. Цена от ${formatPrice(lowPrice)}.`}
   schemas={schemas}
 >
   <div class="container">
@@ -141,7 +169,27 @@ const payload = {
                   </label>
                 ))
               }
+              {
+                hasWindshield && (
+                  <label class="opt">
+                    <input type="radio" name="set" value="windshield" />
+                    <span class="opt__body">
+                      <span class="opt__title">{windshieldSet.name}</span>
+                      <span class="opt__meta">{windshieldSet.short}</span>
+                      <span class="opt__price">{formatPrice(windshieldSet.price)}</span>
+                    </span>
+                  </label>
+                )
+              }
             </div>
+            {
+              hasWindshield && (
+                <p class="hint">
+                  Лобовое стекло доступно только для автомобилей ВАЗ — {formatPrice(windshieldSet.price)} за
+                  комплект.
+                </p>
+              )
+            }
           </fieldset>
 
           <fieldset class="opt-group">
@@ -165,7 +213,7 @@ const payload = {
         <aside class="summary">
           <div class="summary__price">
             <span>Итого</span>
-            <strong data-price aria-live="polite">{formatPrice(priceFor(films[1], frontSet, 15))}</strong>
+            <strong data-price aria-live="polite">{formatPrice(priceFor(films[0], frontSet))}</strong>
           </div>
 
           <dl class="summary__list">
@@ -196,8 +244,7 @@ const payload = {
           <p class="summary__note">
             В комплекте: вырезанные полотна, ракель и инструкция. На маркетплейсе выберите
             ту же модель и комплект.
-          </p>
-        </aside>
+          </p>        </aside>
       </div>
 
       <div class="product-extra">
@@ -208,6 +255,11 @@ const payload = {
             <li>Ракель для разглаживания и инструкция по установке.</li>
             <li>Плёнка без клея — крепится на статике и снимается без следов.</li>
           </ul>
+
+          <p class="prose-note">
+            Нужен материал без лекал? <a href="/plenka-na-otrez/">Плёнка на отрез</a> — 1 750 ₽ за
+            погонный метр.
+          </p>
 
           <h2>Как установить</h2>
           <ol>
@@ -238,16 +290,22 @@ const payload = {
     id: string;
     name: string;
     basePrice: number;
+    prices: Record<'front' | 'rear' | 'full', number>;
   }
   interface SetData {
     id: string;
     name: string;
-    multiplier: number;
+  }
+  interface WindshieldData {
+    id: 'windshield';
+    name: string;
+    price: number;
   }
   interface ConfigData {
     modelLabel: string;
     films: FilmData[];
     sets: SetData[];
+    windshield: WindshieldData | null;
     telegram: string;
   }
 
@@ -269,18 +327,24 @@ const payload = {
 
   function update() {
     const film = data.films.find((item) => item.id === checkedValue('film'));
-    const set = data.sets.find((item) => item.id === checkedValue('set'));
+    const setId = checkedValue('set');
     const vlt = Number(checkedValue('vlt'));
-    if (!film || !set) return;
+    if (!film) return;
 
-    const price = Math.round((film.basePrice * set.multiplier + (vlt >= 50 ? 150 : 0)) / 10) * 10;
+    const windshield = setId === 'windshield' ? data.windshield : null;
+    const set = data.sets.find((item) => item.id === setId);
+    if (!windshield && !set) return;
+
+    const price = windshield ? windshield.price : film.prices[set!.id as 'front' | 'rear' | 'full'];
 
     if (priceEl) priceEl.textContent = format(price);
-    if (filmEl) filmEl.textContent = film.name;
-    if (setEl) setEl.textContent = set.name;
+    if (filmEl) filmEl.textContent = windshield ? 'Не влияет на цену' : film.name;
+    if (setEl) setEl.textContent = windshield ? windshield.name : set!.name;
     if (vltEl) vltEl.textContent = `${vlt}%`;
 
-    const text = `Здравствуйте! Хочу заказать тонировку ${data.modelLabel}: ${film.name}, ${set.name}, светопропускание ${vlt}%. Цена на сайте: ${price} ₽.`;
+    const setLabel = windshield ? `${windshield.name} (только ВАЗ)` : set!.name;
+    const filmLabel = windshield ? 'тип плёнки не влияет на цену' : film.name;
+    const text = `Здравствуйте! Хочу заказать тонировку ${data.modelLabel}: ${filmLabel}, ${setLabel}, светопропускание ${vlt}%. Цена на сайте: ${price} ₽.`;
     telegramButtons.forEach((button) => {
       button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
     });
@@ -510,6 +574,15 @@ const payload = {
     color: var(--color-muted);
     font-size: 0.78rem;
     line-height: 1.5;
+  }
+
+  .prose-note {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .prose-note a {
+    color: var(--color-accent);
   }
 
   .product-extra {

@@ -64,7 +64,7 @@ const schemas = [
         <ul class="details">
           <li><span>Город</span> {site.city}</li>
           <li><span>Telegram</span> <a href={site.telegram}>{site.telegramHandle}</a></li>
-          <li><span>Email</span> <a href={`mailto:${site.email}`}>{site.email}</a></li>
+          {site.email && <li><span>Email</span> <a href={`mailto:${site.email}`}>{site.email}</a></li>}
           <li><span>Доставка</span> СДЭК, Почта России, самовывоз</li>
         </ul>
       </article>

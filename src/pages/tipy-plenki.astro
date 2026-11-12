@@ -4,15 +4,22 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import FilmCard from '../components/FilmCard.astro';
 import GlassSwatch from '../components/GlassSwatch.astro';
 import Button from '../components/Button.astro';
-import { films, vltOptions } from '../data/films';
+import { films, filmByMeter, vltOptions, formatPrice } from '../data/films';
 import { site } from '../data/site';
 import { breadcrumbsSchema, faqSchema } from '../lib/schema';
+
+const filmPrice = (id: string) => formatPrice(films.find((film) => film.id === id)!.basePrice);
 
 const faq = [
   {
     question: 'Чем силиконовая плёнка отличается от жёсткой?',
     answer:
       'Силиконовая мягче и быстрее садится по стеклу, легко снимается и ставится повторно. Жёсткая плотнее, лучше держит форму и служит дольше, но стоит дороже.',
+  },
+  {
+    question: 'Чем атермальная плёнка отличается от обычной?',
+    answer:
+      'Атермальная плёнка отражает часть тепла и снижает нагрев салона, оставаясь почти прозрачной. Её чаще выбирают для передних стёкол, где по ГОСТ нужно не менее 70% светопропускания.',
   },
   {
     question: 'Какую плёнку выбрать для передних стёкол?',
@@ -32,9 +39,10 @@ const faq = [
 ];
 
 const comparison = [
-  { name: 'Классическая', material: 'Плёнка на статике', reuse: 'Многоразовая', term: 'Сезон–два', price: 'от 1 190 ₽' },
-  { name: 'Силиконовая', material: 'Силиконовая плёнка', reuse: 'Многоразовая', term: '2–3 сезона', price: 'от 1 490 ₽' },
-  { name: 'Жёсткая Premium', material: 'Плотная плёнка', reuse: 'Многоразовая', term: '3+ сезона', price: 'от 1 890 ₽' },
+  { name: 'Силиконовая', material: 'Силиконовая плёнка', reuse: 'Многоразовая', term: '2–3 сезона', price: filmPrice('silicone') },
+  { name: 'Классическая', material: 'Плёнка на статике', reuse: 'Многоразовая', term: 'Сезон–два', price: filmPrice('classic') },
+  { name: 'Атермальная', material: 'Атермальная плёнка', reuse: 'Многоразовая', term: '2–3 сезона', price: filmPrice('athermal') },
+  { name: 'Жёсткая Premium', material: 'Плотная плёнка', reuse: 'Многоразовая', term: '3+ сезона', price: filmPrice('hard') },
 ];
 
 const schemas = [
@@ -47,7 +55,7 @@ const schemas = [
 ---
 <BaseLayout
   title="Типы съёмной тонировки"
-  description="Силиконовая, жёсткая и классическая съёмная тонировка: сравнение, светопропускание, ресурс и цены. Что выбрать для передних и задних стёкол."
+  description="Силиконовая, классическая, атермальная и жёсткая Premium съёмная тонировка: сравнение, светопропускание, ресурс и цены. Что выбрать для передних и задних стёкол."
   schemas={schemas}
 >
   <div class="container">
@@ -67,7 +75,7 @@ const schemas = [
 
   <section class="section section--tight">
     <div class="container">
-      <div class="grid grid--3">
+      <div class="grid grid--2">
         {films.map((film) => <FilmCard film={film} />)}
       </div>
     </div>
@@ -106,6 +114,20 @@ const schemas = [
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">На отрез</p>
+        <h2>Плёнка по метру</h2>
+        <p class="lead">
+          Нужен материал без лекал — например, для нестандартного стекла или запаса? Отрезаем
+          плёнку любого типа: {formatPrice(filmByMeter.price)} за {filmByMeter.unit}.
+        </p>
+      </div>
+      <Button href="/plenka-na-otrez/" variant="primary">Подробнее о плёнке на отрез</Button>
     </div>
   </section>
 
