@@ -1,0 +1,296 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import FilmCard from '../components/FilmCard.astro';
+import GlassSwatch from '../components/GlassSwatch.astro';
+import Button from '../components/Button.astro';
+import { films, vltOptions } from '../data/films';
+import { site } from '../data/site';
+import { breadcrumbsSchema, faqSchema } from '../lib/schema';
+
+const faq = [
+  {
+    question: 'Чем силиконовая плёнка отличается от жёсткой?',
+    answer:
+      'Силиконовая мягче и быстрее садится по стеклу, легко снимается и ставится повторно. Жёсткая плотнее, лучше держит форму и служит дольше, но стоит дороже.',
+  },
+  {
+    question: 'Какую плёнку выбрать для передних стёкол?',
+    answer:
+      'По ГОСТ светопропускание передних боковых стёкол должно быть не менее 70%. Для них подходят варианты 70% и прозрачная атермальная плёнка.',
+  },
+  {
+    question: 'Съёмная тонировка оставляет следы?',
+    answer:
+      'Нет. Плёнка крепится на статике, без клея. При снятии на стекле не остаётся клеевого слоя — достаточно протереть стекло.',
+  },
+  {
+    question: 'Сколько служит комплект?',
+    answer:
+      'При аккуратной эксплуатации силиконовая плёнка выдерживает десятки установок. Жёсткая дольше сохраняет форму и меньше растягивается по кромке.',
+  },
+];
+
+const comparison = [
+  { name: 'Классическая', material: 'Плёнка на статике', reuse: 'Многоразовая', term: 'Сезон–два', price: 'от 1 190 ₽' },
+  { name: 'Силиконовая', material: 'Силиконовая плёнка', reuse: 'Многоразовая', term: '2–3 сезона', price: 'от 1 490 ₽' },
+  { name: 'Жёсткая Premium', material: 'Плотная плёнка', reuse: 'Многоразовая', term: '3+ сезона', price: 'от 1 890 ₽' },
+];
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'Типы плёнки', url: '/tipy-plenki/' },
+  ]),
+  faqSchema(faq),
+];
+---
+<BaseLayout
+  title="Типы съёмной тонировки"
+  description="Силиконовая, жёсткая и классическая съёмная тонировка: сравнение, светопропускание, ресурс и цены. Что выбрать для передних и задних стёкол."
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Типы плёнки' }]} />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">Плёнка</p>
+      <h1>Типы съёмной тонировки</h1>
+      <p class="lead">
+        Все комплекты вырезаются по лекалам и крепятся без клея. Разница — в плотности
+        материала, ресурсе и цене. Ниже короткое сравнение.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="grid grid--3">
+        {films.map((film) => <FilmCard film={film} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Сравнение</p>
+        <h2>Что выбрать</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Тип</th>
+              <th scope="col">Материал</th>
+              <th scope="col">Многоразовость</th>
+              <th scope="col">Ресурс</th>
+              <th scope="col">Цена за 2 стекла</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              comparison.map((row) => (
+                <tr>
+                  <th scope="row">{row.name}</th>
+                  <td>{row.material}</td>
+                  <td>{row.reuse}</td>
+                  <td>{row.term}</td>
+                  <td>{row.price}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--surface">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Светопропускание</p>
+        <h2>Какой процент выбрать</h2>
+        <p class="lead">
+          Чем ниже процент, тем темнее плёнка. Для передних стёкол по ГОСТ нужно не менее 70%.
+        </p>
+      </div>
+
+      <div class="grid grid--3 vlt-cards">
+        {
+          vltOptions.map((vlt) => (
+            <div class="vlt-card">
+              <GlassSwatch vlt={vlt} />
+              <div>
+                <h3>{vlt}%</h3>
+                <p>
+                  {vlt <= 5
+                    ? 'Максимальное затемнение, для задних стёкол и трека.'
+                    : vlt <= 20
+                      ? 'Плотное затемнение, комфорт днём и ночью.'
+                      : vlt <= 35
+                        ? 'Средний вариант, меньше бликов и нагрева.'
+                        : vlt <= 50
+                          ? 'Лёгкое затемнение, хороший обзор.'
+                          : 'Практически прозрачная, подходит для передних стёкол.'}
+                </p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="legal">
+        Требования ГОСТ к светопропусканию передних боковых стёкол — не менее 70%.
+        Ответственность за соответствие автомобиля требованиям лежит на владельце.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Частые вопросы о плёнке</h2>
+      </div>
+
+      <div class="faq">
+        {
+          faq.map((item) => (
+            <details class="faq__item">
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))
+        }
+      </div>
+
+      <div class="cta-inline">
+        <Button href="/catalog/" variant="primary">Подобрать по авто</Button>
+        <Button href={site.telegram} variant="secondary" external>Спросить в Telegram</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  table {
+    width: 100%;
+    min-width: 40rem;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+
+  th,
+  td {
+    padding: var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  thead th {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--color-surface-2);
+  }
+
+  tbody th {
+    font-weight: 600;
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--color-surface-2) 60%, transparent);
+  }
+
+  .vlt-cards {
+    margin-top: var(--space-4);
+  }
+
+  .vlt-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .vlt-card p {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .legal {
+    max-width: 70ch;
+    margin-top: var(--space-8);
+    padding: var(--space-4);
+    border-left: 2px solid var(--color-accent);
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .faq {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 52rem;
+  }
+
+  .faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .faq__item summary {
+    padding: var(--space-4) var(--space-5);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-accent);
+  }
+
+  .faq__item[open] summary::after {
+    content: '−';
+  }
+
+  .faq__item p {
+    padding: 0 var(--space-5) var(--space-5);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .cta-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+  }
+</style>

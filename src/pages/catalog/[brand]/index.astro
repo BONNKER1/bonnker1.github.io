@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import { brands, type CarBrand } from '../../../data/cars';
+import { breadcrumbsSchema } from '../../../lib/schema';
+
+export function getStaticPaths() {
+  return brands.map((brand) => ({
+    params: { brand: brand.slug },
+    props: { brand },
+  }));
+}
+
+interface Props {
+  brand: CarBrand;
+}
+
+const { brand } = Astro.props as Props;
+const brandLabel = brand.name.replace(/\s*\([^)]*\)/, '');
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'Каталог', url: '/catalog/' },
+    { name: brandLabel, url: `/catalog/${brand.slug}/` },
+  ]),
+];
+---
+<BaseLayout
+  title={`Тонировка ${brandLabel} по лекалам`}
+  description={`Съёмная тонировка для ${brandLabel}: ${brand.models.length} моделей в базе лекал. Передние и задние полусферы, полный комплект, силиконовая и жёсткая плёнка.`}
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs
+      items={[
+        { name: 'Главная', href: '/' },
+        { name: 'Каталог', href: '/catalog/' },
+        { name: brandLabel },
+      ]}
+    />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">Марка</p>
+      <h1>Тонировка {brandLabel} по лекалам</h1>
+      <p class="lead">
+        Выберите модель — покажем комплекты, степень затемнения и цену. Все лекала проверены
+        под конкретный кузов.
+      </p>
+
+      <div class="grid grid--4 brand-grid">
+        {brand.models.map((model) => <ProductCard brand={brand} model={model} />)}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .brand-grid {
+    margin-top: var(--space-8);
+  }
+</style>

@@ -1,0 +1,66 @@
+---
+interface Props {
+  vlt: number;
+  label?: string;
+}
+
+const { vlt, label } = Astro.props;
+const darkness = Math.min(0.92, Math.max(0.15, 1 - vlt / 100));
+---
+<div class="swatch" style={`--darkness: ${darkness}`} aria-hidden="true">
+  <span class="swatch__value">{vlt}%</span>
+  {label && <span class="swatch__label">{label}</span>}
+</div>
+
+<style>
+  .swatch {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background:
+      radial-gradient(120% 120% at 20% 0%, #33424d 0%, #141a20 55%, #0a0e12 100%),
+      #0b0e11;
+  }
+
+  .swatch::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      115deg,
+      transparent 0 18px,
+      rgb(255 255 255 / 0.035) 18px 20px
+    );
+  }
+
+  .swatch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #04060a;
+    opacity: var(--darkness);
+  }
+
+  .swatch__value {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: var(--step-1);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.8);
+  }
+
+  .swatch__label {
+    position: absolute;
+    z-index: 1;
+    bottom: 0.6rem;
+    left: 0.75rem;
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+</style>

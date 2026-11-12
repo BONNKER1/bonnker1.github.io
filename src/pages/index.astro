@@ -1,0 +1,490 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import CarPicker from '../components/CarPicker.astro';
+import FilmCard from '../components/FilmCard.astro';
+import GlassSwatch from '../components/GlassSwatch.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Button from '../components/Button.astro';
+import { site } from '../data/site';
+import { films } from '../data/films';
+import { popularModels, totalModels } from '../data/cars';
+import { faqSchema, organizationSchema, websiteSchema } from '../lib/schema';
+
+const faq = [
+  {
+    question: 'Что такое тонировка по лекалам?',
+    answer:
+      'Это плёнка, вырезанная по точному шаблону (лекалу) конкретной модели автомобиля. Вам не нужно ничего подрезать: комплект уже повторяет форму стекла.',
+  },
+  {
+    question: 'Съёмная тонировка действительно многоразовая?',
+    answer:
+      'Да. Силиконовая плёнка держится на стекле за счёт статики, без клея. Её можно снять, промыть и установить обратно. Жёсткая плёнка держит форму дольше, но снимается так же.',
+  },
+  {
+    question: 'Какой процент затемнения выбрать?',
+    answer:
+      'Для задних стекол ограничений нет. Для передних по ГОСТ светопропускание должно быть не менее 70%, поэтому для них выбирают 70% или прозрачные атермальные варианты.',
+  },
+  {
+    question: 'Как оплатить и получить заказ?',
+    answer:
+      'Оформить можно в Telegram или купить на Wildberries и Ozon. Отправляем СДЭК и Почтой России, также возможен самовывоз.',
+  },
+  {
+    question: 'Подойдёт ли комплект, если моей модели нет в каталоге?',
+    answer:
+      'Напишите в Telegram марку, модель и год — проверим лекало в базе. Если шаблона нет, изготовим по вашим замерам.',
+  },
+];
+
+const steps = [
+  { title: 'Выберите авто', text: 'Марка и модель в каталоге — под каждую есть готовое лекало.' },
+  { title: 'Настройте комплект', text: 'Тип плёнки, передние или задние полусферы, степень затемнения.' },
+  { title: 'Подтвердите заказ', text: 'В Telegram или на Wildberries / Ozon — как удобнее.' },
+  { title: 'Установите', text: 'Протрите стекло, снимите защитный слой и разгладьте ракелем.' },
+];
+
+const advantages = [
+  {
+    title: 'Точные лекала',
+    text: 'База шаблонов для всех популярных марок и моделей: передние и задние полусферы.',
+  },
+  {
+    title: 'Без клея',
+    text: 'Плёнка фиксируется на статике. Снимается за минуту и не оставляет следов на стекле.',
+  },
+  {
+    title: 'Любой комплект',
+    text: 'Передние, задние или полный комплект из четырёх стёкол — под вашу задачу.',
+  },
+  {
+    title: 'Доставка по РФ',
+    text: 'СДЭК и Почта России, самовывоз. Оплата на Wildberries, Ozon или переводом.',
+  },
+];
+
+const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
+---
+<BaseLayout
+  title={site.name}
+  description={site.description}
+  schemas={schemas}
+>
+  <section class="hero">
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <p class="eyebrow">Съёмная тонировка по лекалам</p>
+        <h1>Тонировка под вашу машину — без клея и следов</h1>
+        <p class="lead">
+          Силиконовая, жёсткая и классическая плёнка, вырезанная по лекалам.
+          Передние и задние полусферы или полный комплект. Ставится за пару минут,
+          снимается ещё быстрее.
+        </p>
+        <CarPicker />
+        <dl class="hero__stats">
+          {
+            site.stats.map((stat) => (
+              <div class="hero__stat">
+                <dt>{stat.label}</dt>
+                <dd>{stat.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+
+      <div class="hero__visual">
+        <div class="hero__panel">
+          <div class="hero__panel-top">
+            <span class="hero__panel-brand">Boonker / glass</span>
+            <span class="hero__panel-vlt">VLT 5%</span>
+          </div>
+          <GlassSwatch vlt={5} label="Максимальное затемнение" />
+          <div class="hero__panel-scale" aria-hidden="true">
+            <span>5%</span>
+            <span>15%</span>
+            <span>35%</span>
+            <span>70%</span>
+          </div>
+        </div>
+        <div class="hero__badges">
+          <span class="chip">Без клея</span>
+          <span class="chip">Многоразовая</span>
+          <span class="chip">По лекалам</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Section
+    eyebrow="Ассортимент"
+    title="Три типа плёнки под разные задачи"
+    description="Все варианты — съёмные и вырезаются по лекалу вашего авто. Разница в плотности, ресурсе и цене."
+  >
+    <div class="grid grid--3">
+      {films.map((film) => <FilmCard film={film} />)}
+    </div>
+    <p class="films-more">
+      <a href="/tipy-plenki/">Сравнить типы плёнки подробнее →</a>
+    </p>
+  </Section>
+
+  <Section
+    surface
+    eyebrow="Как заказать"
+    title="Четыре шага от выбора до установки"
+    description="Никаких замеров и подрезки: комплект уже готов под ваше стекло."
+  >
+    <ol class="steps">
+      {
+        steps.map((step, index) => (
+          <li class="steps__item">
+            <span class="steps__num">{String(index + 1).padStart(2, '0')}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section
+    id="populyarnye"
+    eyebrow="Каталог"
+    title="Популярные модели"
+    description={`В базе уже ${totalModels} лекал популярных автомобилей — от ВАЗ до Haval.`}
+  >
+    <div class="grid grid--4">
+      {popularModels.map(({ brand, model }) => <ProductCard brand={brand} model={model} />)}
+    </div>
+    <p class="films-more">
+      <Button href="/catalog/" variant="secondary">Смотреть все модели</Button>
+    </p>
+  </Section>
+
+  <Section
+    surface
+    eyebrow="Почему Boonker"
+    title="Плёнка, которая не мешает жить"
+  >
+    <div class="grid grid--4">
+      {
+        advantages.map((item) => (
+          <article class="advantage">
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Section
+    eyebrow="Доставка и оплата"
+    title="Отправляем по России, оплата — как удобно"
+  >
+    <div class="grid grid--2">
+      <article class="info-card">
+        <h3>Доставка</h3>
+        <ul>
+          <li>СДЭК и Почта России — по всей РФ</li>
+          <li>Самовывоз по договорённости</li>
+          <li>Отправка в день оплаты или на следующий</li>
+        </ul>
+      </article>
+      <article class="info-card">
+        <h3>Оплата</h3>
+        <ul>
+          <li>Wildberries и Ozon — безопасная сделка</li>
+          <li>Перевод по согласованию в Telegram</li>
+          <li>Цены на сайте — ориентир, точную сумму подтверждает менеджер</li>
+        </ul>
+      </article>
+    </div>
+    <p class="films-more">
+      <a href="/dostavka-i-oplata/">Подробнее о доставке и оплате →</a>
+    </p>
+  </Section>
+
+  <Section
+    surface
+    eyebrow="FAQ"
+    title="Частые вопросы"
+  >
+    <div class="faq">
+      {
+        faq.map((item) => (
+          <details class="faq__item">
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))
+      }
+    </div>
+  </Section>
+
+  <section class="cta">
+    <div class="container cta__inner">
+      <div>
+        <p class="eyebrow">Не нашли свою модель?</p>
+        <h2>Проверим лекало и подберём комплект</h2>
+        <p class="lead">
+          Напишите марку, модель и год — ответим, есть ли шаблон, и посчитаем стоимость.
+        </p>
+      </div>
+      <div class="cta__actions">
+        <Button href={site.telegram} variant="primary" external>Написать в Telegram</Button>
+        <Button href={site.marketplaces.wildberries} variant="secondary" external>Мы на Wildberries</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(3rem, 1rem + 7vw, 6rem);
+    background:
+      radial-gradient(60% 80% at 85% 0%, rgb(216 255 62 / 0.1) 0%, transparent 60%),
+      radial-gradient(50% 60% at 0% 20%, rgb(80 130 160 / 0.12) 0%, transparent 60%);
+  }
+
+  .hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+
+  .hero__copy {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .hero__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .hero__stat dt {
+    order: 2;
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .hero__stat dd {
+    order: 1;
+    font-size: var(--step-1);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .hero__visual {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .hero__panel {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hero__panel-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .hero__panel-brand {
+    color: var(--color-muted);
+  }
+
+  .hero__panel-vlt {
+    color: var(--color-accent);
+  }
+
+  .hero__panel-scale {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .hero__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .films-more {
+    margin-top: var(--space-8);
+  }
+
+  .films-more a {
+    color: var(--color-accent);
+    font-size: var(--step--1);
+  }
+
+  .films-more a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-6);
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+
+  .steps__item {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+  }
+
+  .steps__num {
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+  }
+
+  .steps__item p {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .advantage {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+  }
+
+  .advantage p {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .info-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .info-card ul {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: 1.1em;
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .info-card li::marker {
+    color: var(--color-accent);
+  }
+
+  .faq {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 52rem;
+  }
+
+  .faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .faq__item summary {
+    padding: var(--space-4) var(--space-5);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-accent);
+    font-size: var(--step-1);
+    line-height: 1;
+  }
+
+  .faq__item[open] summary::after {
+    content: '−';
+  }
+
+  .faq__item p {
+    padding: 0 var(--space-5) var(--space-5);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .cta {
+    padding-block: clamp(3rem, 1rem + 6vw, 5rem);
+  }
+
+  .cta__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(80% 120% at 100% 0%, rgb(216 255 62 / 0.12) 0%, transparent 55%),
+      var(--color-surface);
+  }
+
+  .cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  @media (max-width: 960px) {
+    .hero__inner {
+      grid-template-columns: 1fr;
+    }
+
+    .hero__visual {
+      order: -1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero__stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

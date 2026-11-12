@@ -1,0 +1,162 @@
+---
+import { site } from '../data/site';
+import Logo from './Logo.astro';
+
+const year = new Date().getFullYear();
+
+const columns = [
+  {
+    title: 'Каталог',
+    links: [
+      { href: '/catalog/', label: 'Все модели' },
+      { href: '/tipy-plenki/', label: 'Типы плёнки' },
+      { href: '/#populyarnye', label: 'Популярные модели' },
+    ],
+  },
+  {
+    title: 'Покупателям',
+    links: [
+      { href: '/dostavka-i-oplata/', label: 'Доставка и оплата' },
+      { href: '/faq/', label: 'Вопросы и ответы' },
+      { href: '/kontakty/', label: 'Контакты' },
+    ],
+  },
+];
+---
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <Logo />
+      <p class="footer__about">
+        Съёмная тонировка по готовым лекалам: передние и задние полусферы, полный комплект.
+        Без клея, с доставкой по России.
+      </p>
+      <div class="footer__marketplaces">
+        <a href={site.marketplaces.wildberries} target="_blank" rel="noopener noreferrer">Wildberries</a>
+        <a href={site.marketplaces.ozon} target="_blank" rel="noopener noreferrer">Ozon</a>
+        <a href={site.telegram} target="_blank" rel="noopener noreferrer">Telegram</a>
+      </div>
+    </div>
+
+    {
+      columns.map((column) => (
+        <nav class="footer__col" aria-label={column.title}>
+          <h2 class="footer__title">{column.title}</h2>
+          <ul>
+            {column.links.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+
+    <div class="footer__col">
+      <h2 class="footer__title">Связаться</h2>
+      <ul>
+        <li><a href={site.telegram} target="_blank" rel="noopener noreferrer">{site.telegramHandle}</a></li>
+        <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+        <li><span class="muted">{site.city}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer__bottom">
+    <p>© {year} {site.name}. Цены на сайте не являются публичной офертой.</p>
+    <p class="muted">Тонировка передних стёкол должна соответствовать требованиям ГОСТ.</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding-top: var(--space-16);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .footer__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    gap: var(--space-10);
+    padding-bottom: var(--space-12);
+  }
+
+  .footer__brand {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: var(--space-4);
+  }
+
+  .footer__about {
+    max-width: 32ch;
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .footer__marketplaces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .footer__marketplaces a {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--1);
+    transition: border-color 160ms ease-out;
+  }
+
+  .footer__marketplaces a:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .footer__title {
+    margin-bottom: var(--space-4);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .footer__col ul {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+    font-size: var(--step--1);
+  }
+
+  .footer__col a:hover {
+    color: var(--color-accent);
+  }
+
+  .footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 860px) {
+    .footer__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 520px) {
+    .footer__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

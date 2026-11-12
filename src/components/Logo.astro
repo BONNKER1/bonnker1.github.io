@@ -1,0 +1,28 @@
+---
+interface Props {
+  size?: number;
+}
+const { size = 30 } = Astro.props;
+---
+<span class="logo">
+  <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+    <rect width="32" height="32" rx="9" fill="var(--color-accent)"></rect>
+    <path d="M8 21.5 13 10.5h4l-5 11H8Z" fill="var(--color-accent-ink)"></path>
+    <path d="M15.5 21.5 20.5 10.5h4l-5 11h-4Z" fill="var(--color-accent-ink)" opacity="0.55"></path>
+  </svg>
+  <span class="logo__text">BOONKER</span>
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .logo__text {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+  }
+</style>

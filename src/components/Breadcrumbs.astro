@@ -1,0 +1,52 @@
+---
+interface Props {
+  items: { name: string; href?: string }[];
+}
+const { items } = Astro.props;
+---
+<nav class="crumbs" aria-label="Хлебные крошки">
+  <ol>
+    {
+      items.map((item) => (
+        <li>
+          {item.href ? <a href={item.href}>{item.name}</a> : <span aria-current="page">{item.name}</span>}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .crumbs {
+    padding-block: var(--space-4);
+    font-size: var(--step--1);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  .crumbs li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-muted);
+  }
+
+  .crumbs li + li::before {
+    content: '/';
+    color: var(--color-border-strong);
+  }
+
+  .crumbs a:hover {
+    color: var(--color-accent);
+  }
+
+  .crumbs [aria-current='page'] {
+    color: var(--color-text);
+  }
+</style>

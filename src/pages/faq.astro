@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Button from '../components/Button.astro';
+import { site } from '../data/site';
+import { breadcrumbsSchema, faqSchema } from '../lib/schema';
+
+const faq = [
+  {
+    question: 'Что такое тонировка по лекалам?',
+    answer:
+      'Плёнка уже вырезана по точному шаблону конкретной модели авто. Вам не нужно размечать и подрезать стекло — комплект повторяет его форму.',
+  },
+  {
+    question: 'Как понять, что лекало подойдёт моей машине?',
+    answer:
+      'Найдите марку и модель в каталоге. Если сомневаетесь, напишите в Telegram год и поколение — сверим с базой лекал.',
+  },
+  {
+    question: 'Чем съёмная тонировка отличается от обычной?',
+    answer:
+      'Съёмная крепится на статике, без клея. Её можно снять перед поездкой или продажей авто и поставить обратно. Обычная плёнка клеится навсегда.',
+  },
+  {
+    question: 'Останутся ли следы после снятия?',
+    answer:
+      'Нет. Клеевого слоя нет, поэтому после снятия достаточно протереть стекло. На самом стекле следов не остаётся.',
+  },
+  {
+    question: 'Можно ли мыть стекло с плёнкой?',
+    answer:
+      'Да, мягкой тканью и обычным средством для стёкол. Не используйте абразивы, скребки и растворители.',
+  },
+  {
+    question: 'Сколько времени занимает установка?',
+    answer:
+      'Обычно 5–15 минут на два стекла. Нужны чистое стекло, вода и ракель — он идёт в комплекте.',
+  },
+  {
+    question: 'Можно ли тонировать передние стёкла?',
+    answer:
+      'По ГОСТ светопропускание передних боковых стёкол должно быть не менее 70%. Для них выбирают 70% или прозрачную атермальную плёнку.',
+  },
+  {
+    question: 'Как оплатить заказ?',
+    answer: `На Wildberries, Ozon или переводом по согласованию в Telegram. Ссылки — в разделе «Доставка и оплата».`,
+  },
+  {
+    question: 'Как быстро отправляете?',
+    answer:
+      'В день оплаты или на следующий рабочий день. СДЭК — 2–7 дней, Почта России — 4–12 дней. Трек присылаем после отправки.',
+  },
+  {
+    question: 'Что делать, если комплект не подошёл?',
+    answer:
+      'Напишите в Telegram в течение 7 дней после получения. Если лекало не совпало с кузовом, заменим комплект или вернём деньги.',
+  },
+];
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'FAQ', url: '/faq/' },
+  ]),
+  faqSchema(faq),
+];
+---
+<BaseLayout
+  title="Вопросы и ответы"
+  description="Ответы на частые вопросы о съёмной тонировке по лекалам: установка, светопропускание, оплата, доставка и возврат."
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'FAQ' }]} />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">FAQ</p>
+      <h1>Вопросы и ответы</h1>
+      <p class="lead">
+        Собрали то, что спрашивают чаще всего. Если ответа нет — напишите в Telegram,
+        отвечаем в течение дня.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="faq">
+        {
+          faq.map((item) => (
+            <details class="faq__item">
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))
+        }
+      </div>
+
+      <div class="cta-inline">
+        <Button href={site.telegram} variant="primary" external>Задать вопрос в Telegram</Button>
+        <Button href="/catalog/" variant="secondary">Перейти в каталог</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .faq {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 52rem;
+  }
+
+  .faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .faq__item summary {
+    padding: var(--space-4) var(--space-5);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-accent);
+  }
+
+  .faq__item[open] summary::after {
+    content: '−';
+  }
+
+  .faq__item p {
+    padding: 0 var(--space-5) var(--space-5);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .cta-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+  }
+</style>

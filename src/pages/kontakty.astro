@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Button from '../components/Button.astro';
+import { site } from '../data/site';
+import { breadcrumbsSchema, organizationSchema } from '../lib/schema';
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'Контакты', url: '/kontakty/' },
+  ]),
+  organizationSchema(),
+];
+---
+<BaseLayout
+  title="Контакты"
+  description="Связаться с Boonker: Telegram, Wildberries, Ozon. Подбор лекала, заказ и вопросы по доставке съёмной тонировки."
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Контакты' }]} />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">Контакты</p>
+      <h1>Связаться с нами</h1>
+      <p class="lead">
+        Быстрее всего — в Telegram: там можно уточнить лекало, комплект и цену. Заказы также
+        принимаем на Wildberries и Ozon.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container contact-grid">
+      <article class="contact-card contact-card--accent">
+        <span class="contact-card__label">Основной канал</span>
+        <h2>Telegram</h2>
+        <p>
+          Подбор лекала, консультация и оформление заказа. Отвечаем в течение дня.
+        </p>
+        <Button href={site.telegram} variant="primary" external>Написать {site.telegramHandle}</Button>
+      </article>
+
+      <article class="contact-card">
+        <span class="contact-card__label">Маркетплейс</span>
+        <h2>Wildberries</h2>
+        <p>Готовые комплекты с оплатой при получении и доставкой в пункты выдачи.</p>
+        <Button href={site.marketplaces.wildberries} variant="secondary" external>Открыть магазин</Button>
+      </article>
+
+      <article class="contact-card">
+        <span class="contact-card__label">Маркетплейс</span>
+        <h2>Ozon</h2>
+        <p>Тот же ассортимент, безопасная сделка и проверенные сроки доставки.</p>
+        <Button href={site.marketplaces.ozon} variant="secondary" external>Открыть магазин</Button>
+      </article>
+
+      <article class="contact-card">
+        <span class="contact-card__label">Реквизиты</span>
+        <h2>Детали</h2>
+        <ul class="details">
+          <li><span>Город</span> {site.city}</li>
+          <li><span>Telegram</span> <a href={site.telegram}>{site.telegramHandle}</a></li>
+          <li><span>Email</span> <a href={`mailto:${site.email}`}>{site.email}</a></li>
+          <li><span>Доставка</span> СДЭК, Почта России, самовывоз</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Перед заказом</p>
+        <h2>Что подготовить</h2>
+      </div>
+      <div class="grid grid--3">
+        <div class="prep">
+          <h3>Марка и модель</h3>
+          <p>Например, Lada Vesta или Kia Rio. Если знаете поколение — ещё лучше.</p>
+        </div>
+        <div class="prep">
+          <h3>Год выпуска</h3>
+          <p>Помогает сверить лекало, если у модели несколько кузовов.</p>
+        </div>
+        <div class="prep">
+          <h3>Комплект</h3>
+          <p>Передние, задние полусферы или полный комплект из четырёх стёкол.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-4);
+  }
+
+  .contact-card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+
+  .contact-card--accent {
+    border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+    background:
+      radial-gradient(90% 80% at 100% 0%, rgb(216 255 62 / 0.1) 0%, transparent 60%),
+      var(--color-surface);
+  }
+
+  .contact-card__label {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .contact-card p {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .contact-card :global(.btn) {
+    justify-self: start;
+    margin-top: var(--space-2);
+  }
+
+  .details {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+    font-size: var(--step--1);
+  }
+
+  .details li {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: var(--space-2);
+  }
+
+  .details span {
+    color: var(--color-muted);
+  }
+
+  .details a:hover {
+    color: var(--color-accent);
+  }
+
+  .prep {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+  }
+
+  .prep p {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 420px) {
+    .details li {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+---
+<BaseLayout title="Страница не найдена" noindex>
+  <section class="section">
+    <div class="container lost">
+      <p class="eyebrow">404</p>
+      <h1>Такой страницы нет</h1>
+      <p class="lead">
+        Возможно, ссылка устарела. Начните с каталога — там все модели и комплекты.
+      </p>
+      <div class="lost__actions">
+        <Button href="/catalog/" variant="primary">Перейти в каталог</Button>
+        <Button href="/" variant="secondary">На главную</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .lost {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    padding-block: clamp(3rem, 10vw, 8rem);
+  }
+
+  .lost__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+</style>

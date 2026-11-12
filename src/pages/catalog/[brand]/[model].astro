@@ -1,0 +1,571 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import Button from '../../../components/Button.astro';
+import { brands, type CarBrand, type CarModel } from '../../../data/cars';
+import { films, filmSets, vltOptions, formatPrice, priceFor } from '../../../data/films';
+import { site } from '../../../data/site';
+import { breadcrumbsSchema, faqSchema, productSchema } from '../../../lib/schema';
+
+export function getStaticPaths() {
+  return brands.flatMap((brand) =>
+    brand.models.map((model) => ({
+      params: { brand: brand.slug, model: model.slug },
+      props: { brand, model },
+    })),
+  );
+}
+
+interface Props {
+  brand: CarBrand;
+  model: CarModel;
+}
+
+const { brand, model } = Astro.props as Props;
+const brandLabel = brand.name.replace(/\s*\([^)]*\)/, '');
+const fullSet = filmSets.find((set) => set.id === 'full')!;
+const frontSet = filmSets.find((set) => set.id === 'front')!;
+
+const lowPrice = Math.min(...films.map((film) => priceFor(film, frontSet, 5)));
+const highPrice = Math.max(...films.map((film) => priceFor(film, fullSet, 70)));
+
+const faq = [
+  {
+    question: `Подойдёт ли тонировка на ${brandLabel} ${model.name}?`,
+    answer: `Да, лекало сделано под ${brandLabel} ${model.name} (${model.years}, ${model.body}). Комплект уже вырезан по форме стёкол, подрезать ничего не нужно.`,
+  },
+  {
+    question: 'Можно ли тонировать передние стёкла?',
+    answer:
+      'По ГОСТ светопропускание передних боковых стёкол должно быть не менее 70%. Для передних стёкол выбирайте 70% или прозрачные атермальные варианты, для задних ограничений нет.',
+  },
+  {
+    question: 'Как снять и поставить плёнку заново?',
+    answer:
+      'Плёнка держится на статике, без клея. Аккуратно подденьте край, снимите, промойте тёплой водой и приклейте обратно на чистое стекло, разгладив ракелем.',
+  },
+];
+
+const product = { brand, model, film: films[2], lowPrice, highPrice };
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'Каталог', url: '/catalog/' },
+    { name: brandLabel, url: `/catalog/${brand.slug}/` },
+    { name: model.name, url: `/catalog/${brand.slug}/${model.slug}/` },
+  ]),
+  faqSchema(faq),
+  productSchema(product),
+];
+
+const payload = {
+  modelLabel: `${brandLabel} ${model.name}`,
+  films: films.map(({ id, name, basePrice }) => ({ id, name, basePrice })),
+  sets: filmSets.map(({ id, name, multiplier }) => ({ id, name, multiplier })),
+  telegram: site.telegram,
+};
+---
+<BaseLayout
+  title={`Тонировка ${brandLabel} ${model.name} по лекалам`}
+  description={`Съёмная тонировка на ${brandLabel} ${model.name} (${model.years}). Лекала под передние и задние полусферы, силиконовая, жёсткая и классическая плёнка. Цена от ${formatPrice(lowPrice)}.`}
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs
+      items={[
+        { name: 'Главная', href: '/' },
+        { name: 'Каталог', href: '/catalog/' },
+        { name: brandLabel, href: `/catalog/${brand.slug}/` },
+        { name: model.name },
+      ]}
+    />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="product-head">
+        <div>
+          <p class="eyebrow">Лекало в базе</p>
+          <h1>Тонировка {brandLabel} {model.name}</h1>
+          <p class="lead">
+            {model.years} · {model.body}. Комплект вырезан по форме стёкол — без подрезки и
+            подгонки.
+          </p>
+        </div>
+        <div class="chips">
+          <span class="chip chip--accent">Цена от {formatPrice(lowPrice)}</span>
+          <span class="chip">Без клея</span>
+          <span class="chip">Многоразовая</span>
+        </div>
+      </div>
+
+      <div class="product-layout" data-configurator>
+        <div hidden id="configurator-data" data-json={JSON.stringify(payload)}></div>
+
+        <form class="config" onsubmit="return false">
+          <fieldset class="opt-group">
+            <legend>Тип плёнки</legend>
+            <div class="opt-grid opt-grid--3">
+              {
+                films.map((film) => (
+                  <label class="opt">
+                    <input
+                      type="radio"
+                      name="film"
+                      value={film.id}
+                      checked={film.id === 'silicone'}
+                    />
+                    <span class="opt__body">
+                      <span class="opt__title">{film.name}</span>
+                      <span class="opt__meta">{film.short}</span>
+                      <span class="opt__price">от {formatPrice(film.basePrice)}</span>
+                    </span>
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          <fieldset class="opt-group">
+            <legend>Комплект</legend>
+            <div class="opt-grid opt-grid--3">
+              {
+                filmSets.map((set) => (
+                  <label class="opt">
+                    <input type="radio" name="set" value={set.id} checked={set.id === 'front'} />
+                    <span class="opt__body">
+                      <span class="opt__title">{set.name}</span>
+                      <span class="opt__meta">{set.short}</span>
+                    </span>
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          <fieldset class="opt-group">
+            <legend>Светопропускание</legend>
+            <div class="vlt-grid">
+              {
+                vltOptions.map((vlt) => (
+                  <label class="vlt">
+                    <input type="radio" name="vlt" value={vlt} checked={vlt === 15} />
+                    <span>{vlt}%</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="hint">
+              Для передних стёкол по ГОСТ нужно не менее 70%. Для задних ограничений нет.
+            </p>
+          </fieldset>
+        </form>
+
+        <aside class="summary">
+          <div class="summary__price">
+            <span>Итого</span>
+            <strong data-price aria-live="polite">{formatPrice(priceFor(films[1], frontSet, 15))}</strong>
+          </div>
+
+          <dl class="summary__list">
+            <div>
+              <dt>Авто</dt>
+              <dd>{brandLabel} {model.name}</dd>
+            </div>
+            <div>
+              <dt>Плёнка</dt>
+              <dd data-summary-film>Съёмная силиконовая</dd>
+            </div>
+            <div>
+              <dt>Комплект</dt>
+              <dd data-summary-set>Передние полусферы</dd>
+            </div>
+            <div>
+              <dt>Затемнение</dt>
+              <dd data-summary-vlt>15%</dd>
+            </div>
+          </dl>
+
+          <div class="summary__actions">
+            <Button href={site.telegram} variant="primary" external>Заказать в Telegram</Button>
+            <Button href={site.marketplaces.wildberries} variant="secondary" external>Купить на Wildberries</Button>
+            <Button href={site.marketplaces.ozon} variant="ghost" external>Купить на Ozon</Button>
+          </div>
+
+          <p class="summary__note">
+            В комплекте: вырезанные полотна, ракель и инструкция. На маркетплейсе выберите
+            ту же модель и комплект.
+          </p>
+        </aside>
+      </div>
+
+      <div class="product-extra">
+        <div class="prose">
+          <h2>Что входит в комплект</h2>
+          <ul>
+            <li>Полотна, вырезанные по лекалу {brandLabel} {model.name}.</li>
+            <li>Ракель для разглаживания и инструкция по установке.</li>
+            <li>Плёнка без клея — крепится на статике и снимается без следов.</li>
+          </ul>
+
+          <h2>Как установить</h2>
+          <ol>
+            <li>Вымойте стекло и обезжирьте поверхность.</li>
+            <li>Слегка смочите стекло водой — так проще выгнать пузыри.</li>
+            <li>Снимите защитный слой и приложите полотно по кромке.</li>
+            <li>Разгладьте ракелем от центра к краям.</li>
+          </ol>
+        </div>
+
+        <div class="faq">
+          {
+            faq.map((item) => (
+              <details class="faq__item">
+                <summary>{item.question}</summary>
+                <p>{item.answer}</p>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  interface FilmData {
+    id: string;
+    name: string;
+    basePrice: number;
+  }
+  interface SetData {
+    id: string;
+    name: string;
+    multiplier: number;
+  }
+  interface ConfigData {
+    modelLabel: string;
+    films: FilmData[];
+    sets: SetData[];
+    telegram: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-configurator]');
+  const dataEl = document.querySelector<HTMLElement>('#configurator-data');
+  if (!root || !dataEl?.dataset.json) throw new Error('Configurator data missing');
+
+  const data: ConfigData = JSON.parse(dataEl.dataset.json);
+  const priceEl = root.querySelector<HTMLElement>('[data-price]');
+  const filmEl = root.querySelector<HTMLElement>('[data-summary-film]');
+  const setEl = root.querySelector<HTMLElement>('[data-summary-set]');
+  const vltEl = root.querySelector<HTMLElement>('[data-summary-vlt]');
+  const telegramButtons = root.querySelectorAll<HTMLAnchorElement>('a[href*="t.me"]');
+
+  const checkedValue = (name: string) =>
+    root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
+
+  const format = (value: number) => `${new Intl.NumberFormat('ru-RU').format(value)} ₽`;
+
+  function update() {
+    const film = data.films.find((item) => item.id === checkedValue('film'));
+    const set = data.sets.find((item) => item.id === checkedValue('set'));
+    const vlt = Number(checkedValue('vlt'));
+    if (!film || !set) return;
+
+    const price = Math.round((film.basePrice * set.multiplier + (vlt >= 50 ? 150 : 0)) / 10) * 10;
+
+    if (priceEl) priceEl.textContent = format(price);
+    if (filmEl) filmEl.textContent = film.name;
+    if (setEl) setEl.textContent = set.name;
+    if (vltEl) vltEl.textContent = `${vlt}%`;
+
+    const text = `Здравствуйте! Хочу заказать тонировку ${data.modelLabel}: ${film.name}, ${set.name}, светопропускание ${vlt}%. Цена на сайте: ${price} ₽.`;
+    telegramButtons.forEach((button) => {
+      button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
+    });
+  }
+
+  root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {
+    input.addEventListener('change', update);
+  });
+
+  update();
+</script>
+
+<style>
+  .product-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .product-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .config {
+    display: grid;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+
+  .opt-group {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    border: 0;
+  }
+
+  .opt-group legend {
+    margin-bottom: var(--space-1);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .opt-grid {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .opt-grid--3 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  }
+
+  .opt {
+    position: relative;
+    display: block;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    cursor: pointer;
+    transition:
+      border-color 160ms ease-out,
+      background-color 160ms ease-out;
+  }
+
+  .opt:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  .opt:has(input:checked) {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-2));
+  }
+
+  .opt:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .opt input,
+  .vlt input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .opt__body {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .opt__title {
+    font-weight: 600;
+  }
+
+  .opt__meta {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .opt__price {
+    margin-top: var(--space-1);
+    color: var(--color-accent);
+    font-size: var(--step--1);
+    font-family: var(--font-mono);
+  }
+
+  .vlt-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .vlt {
+    position: relative;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    cursor: pointer;
+    transition:
+      border-color 160ms ease-out,
+      color 160ms ease-out;
+  }
+
+  .vlt:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  .vlt:has(input:checked) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .vlt:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .hint {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .summary {
+    position: sticky;
+    top: 5.5rem;
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(90% 60% at 100% 0%, rgb(216 255 62 / 0.1) 0%, transparent 60%),
+      var(--color-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  .summary__price {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .summary__price span {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .summary__price strong {
+    font-size: var(--step-3);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .summary__list {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--step--1);
+  }
+
+  .summary__list div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .summary__list dt {
+    color: var(--color-muted);
+  }
+
+  .summary__list dd {
+    text-align: right;
+  }
+
+  .summary__actions {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .summary__note {
+    color: var(--color-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .product-extra {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-10);
+    margin-top: var(--space-12);
+  }
+
+  .faq {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+  }
+
+  .faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .faq__item summary {
+    padding: var(--space-4);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-accent);
+  }
+
+  .faq__item[open] summary::after {
+    content: '−';
+  }
+
+  .faq__item p {
+    padding: 0 var(--space-4) var(--space-4);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 900px) {
+    .product-layout,
+    .product-extra {
+      grid-template-columns: 1fr;
+    }
+
+    .summary {
+      position: static;
+    }
+  }
+</style>

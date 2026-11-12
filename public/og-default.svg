@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="glow" cx="85%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#d8ff3e" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#08090a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#33424d"/>
+      <stop offset="60%" stop-color="#141a20"/>
+      <stop offset="100%" stop-color="#05070a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#08090a"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <g transform="translate(80 84)">
+    <rect width="56" height="56" rx="16" fill="#d8ff3e"/>
+    <path d="M14 38 22 18h7l-8 20h-7Z" fill="#10130a"/>
+    <path d="M27 38 35 18h7l-8 20h-7Z" fill="#10130a" opacity="0.55"/>
+    <text x="76" y="38" fill="#f2f4f6" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">BOONKER</text>
+  </g>
+
+  <text x="80" y="290" fill="#f2f4f6" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2">Тонировка по лекалам</text>
+  <text x="80" y="360" fill="#9aa1ab" font-family="Segoe UI, Arial, sans-serif" font-size="34">Съёмная силиконовая, жёсткая и классическая плёнка</text>
+  <text x="80" y="410" fill="#9aa1ab" font-family="Segoe UI, Arial, sans-serif" font-size="34">Передние и задние полусферы · доставка по России</text>
+
+  <g transform="translate(760 230)">
+    <rect width="360" height="230" rx="26" fill="url(#glass)" stroke="#363c45"/>
+    <rect width="360" height="230" rx="26" fill="#04060a" opacity="0.78"/>
+    <text x="30" y="70" fill="#f2f4f6" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="600">VLT 5%</text>
+    <text x="30" y="112" fill="#9aa1ab" font-family="Segoe UI, Arial, sans-serif" font-size="20">максимальное затемнение</text>
+    <rect x="30" y="170" width="120" height="10" rx="5" fill="#d8ff3e"/>
+    <rect x="160" y="170" width="60" height="10" rx="5" fill="#363c45"/>
+    <rect x="230" y="170" width="60" height="10" rx="5" fill="#363c45"/>
+  </g>
+
+  <g transform="translate(80 520)">
+    <rect width="240" height="52" rx="26" fill="#d8ff3e"/>
+    <text x="30" y="34" fill="#10130a" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600">boonker.ru</text>
+  </g>
+</svg>

@@ -1,0 +1,262 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Button from '../components/Button.astro';
+import { site } from '../data/site';
+import { breadcrumbsSchema, faqSchema } from '../lib/schema';
+
+const faq = [
+  {
+    question: 'Сколько идёт доставка?',
+    answer:
+      'СДЭК — обычно 2–7 дней в зависимости от региона, Почта России — 4–12 дней. Трек-номер отправляем после передачи посылки.',
+  },
+  {
+    question: 'Можно ли оплатить при получении?',
+    answer:
+      'На Wildberries и Ozon доступна оплата при получении и безопасная сделка. При заказе напрямую — перевод до отправки.',
+  },
+  {
+    question: 'Что делать, если комплект не подошёл?',
+    answer:
+      'Напишите в Telegram в течение 7 дней после получения. Если лекало не совпало с кузовом, заменим комплект или вернём деньги.',
+  },
+];
+
+const schemas = [
+  breadcrumbsSchema([
+    { name: 'Главная', url: '/' },
+    { name: 'Доставка и оплата', url: '/dostavka-i-oplata/' },
+  ]),
+  faqSchema(faq),
+];
+---
+<BaseLayout
+  title="Доставка и оплата"
+  description="Доставка съёмной тонировки по России: СДЭК, Почта России и самовывоз. Оплата на Wildberries, Ozon или переводом."
+  schemas={schemas}
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Доставка и оплата' }]} />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">Сервис</p>
+      <h1>Доставка и оплата</h1>
+      <p class="lead">
+        Отправляем по всей России. Выберите удобный способ получения и оплаты — менеджер
+        подтвердит детали в Telegram.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container grid grid--2">
+      <article class="panel">
+        <h2>Доставка</h2>
+        <ul class="list">
+          <li>
+            <strong>СДЭК</strong>
+            <span>2–7 дней, до пункта выдачи или курьером.</span>
+          </li>
+          <li>
+            <strong>Почта России</strong>
+            <span>4–12 дней, по всей стране.</span>
+          </li>
+          <li>
+            <strong>Самовывоз</strong>
+            <span>По договорённости, {site.city}.</span>
+          </li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Оплата</h2>
+        <ul class="list">
+          <li>
+            <strong>Wildberries</strong>
+            <span>Безопасная сделка, оплата при получении.</span>
+          </li>
+          <li>
+            <strong>Ozon</strong>
+            <span>Безопасная сделка, оплата при получении.</span>
+          </li>
+          <li>
+            <strong>Перевод</strong>
+            <span>По согласованию в Telegram, до отправки.</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Порядок</p>
+        <h2>Как проходит заказ</h2>
+      </div>
+
+      <ol class="flow">
+        <li>
+          <span class="flow__num">01</span>
+          <div>
+            <h3>Выбираете модель</h3>
+            <p>В каталоге или через подбор по марке и модели.</p>
+          </div>
+        </li>
+        <li>
+          <span class="flow__num">02</span>
+          <div>
+            <h3>Согласуете комплект</h3>
+            <p>Тип плёнки, передние или задние полусферы, процент затемнения.</p>
+          </div>
+        </li>
+        <li>
+          <span class="flow__num">03</span>
+          <div>
+            <h3>Оплачиваете</h3>
+            <p>На маркетплейсе или переводом — как удобнее.</p>
+          </div>
+        </li>
+        <li>
+          <span class="flow__num">04</span>
+          <div>
+            <h3>Получаете посылку</h3>
+            <p>Отправляем в день оплаты или на следующий рабочий день, присылаем трек.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="cta-inline">
+        <Button href={site.telegram} variant="primary" external>Оформить в Telegram</Button>
+        <Button href={site.marketplaces.wildberries} variant="secondary" external>Wildberries</Button>
+        <Button href={site.marketplaces.ozon} variant="ghost" external>Ozon</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--surface">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Вопросы по доставке</h2>
+      </div>
+
+      <div class="faq">
+        {
+          faq.map((item) => (
+            <details class="faq__item">
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .panel {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .list li {
+    display: grid;
+    gap: 0.15rem;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .list span {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  .flow li {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+  }
+
+  .flow__num {
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  .flow p {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .cta-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-10);
+  }
+
+  .faq {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 52rem;
+  }
+
+  .faq__item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .faq__item summary {
+    padding: var(--space-4) var(--space-5);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-accent);
+  }
+
+  .faq__item[open] summary::after {
+    content: '−';
+  }
+
+  .faq__item p {
+    padding: 0 var(--space-5) var(--space-5);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+</style>
