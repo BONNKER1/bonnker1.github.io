@@ -11,14 +11,14 @@
 - **Astro 7 + TypeScript** (статическая генерация, SSG)
 - **Свой CSS на дизайн-токенах** (`src/styles/tokens.css`), Tailwind не используется
 - Пакетный менеджер: `pnpm`
-- Деплой: Cloudflare Pages (планируется)
+- Деплой: GitHub Pages (`.github/workflows/deploy.yml`, адрес `https://bonnker1.github.io/`)
 - `astro check` работает только с TypeScript 6 (TS 7 не поддерживается)
 
 ## Структура
 
 ```
 src/
-  pages/            # маршруты: главная, каталог, типы плёнки, доставка, FAQ, контакты, 404
+  pages/            # маршруты: главная, каталог, типы плёнки, плёнка на отрез, доставка, FAQ, контакты, 404
     catalog/
       index.astro           # каталог с фильтром по марке и поиском
       [brand]/index.astro   # страница марки
@@ -55,10 +55,11 @@ pnpm og        # пересобрать OG-картинку из SVG
 
 ## Что заменить перед запуском
 
-- `src/data/cars.ts` — демо-база (15 марок, 43 модели) на реальную базу лекал из CSV.
-- `src/data/site.ts` — Telegram-ник, email, город, домен.
-- `astro.config.mjs`, `public/robots.txt` — домен `boonker.ru` указан как placeholder.
-- Цены в `src/data/films.ts` — демонстрационные (1 190 / 1 490 / 1 890 ₽).
+- `src/data/cars.ts` — демо-база (15 марок, 43 модели) на реальную базу лекал из выгрузки WB/Ozon.
+- `src/data/site.ts` — email (сейчас пустой, скрыт), домен при переезде с GitHub Pages.
+- `astro.config.mjs`, `public/robots.txt` — домен `bonnker1.github.io`.
+- Цены в `src/data/films.ts` — реальные: 1 050 / 1 350 / 1 550 / 1 750 ₽ за 2 стекла,
+  полный комплект 2×, лобовое 1 850 ₽ (только ВАЗ), отрез 1 750 ₽/пог. м.
 
 ## Навыки
 
