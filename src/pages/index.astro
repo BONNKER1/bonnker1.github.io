@@ -136,6 +136,24 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   </Section>
 
   <Section
+    eyebrow="Примеры"
+    title="Как выглядит съёмная тонировка на авто"
+    description="Реальные примеры установки по лекалам — аккуратный край, ровное затемнение и чистое стекло."
+  >
+    <div class="examples">
+      <figure class="examples__item">
+        <img src="/images/examples/example-1.webp" alt="Пример съёмной тонировки на автомобиле — вид сбоку" loading="lazy" width="800" height="600" />
+      </figure>
+      <figure class="examples__item">
+        <img src="/images/examples/example-2.webp" alt="Пример тонировки задних стекол по лекалу" loading="lazy" width="800" height="600" />
+      </figure>
+      <figure class="examples__item">
+        <img src="/images/examples/example-3.webp" alt="Пример установленной съёмной тонировки на стекле" loading="lazy" width="800" height="600" />
+      </figure>
+    </div>
+  </Section>
+
+  <Section
     surface
     eyebrow="Как заказать"
     title="Четыре шага от выбора до установки"
@@ -402,6 +420,28 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     text-underline-offset: 4px;
   }
 
+  .examples {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .examples__item {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .examples__item img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
   .steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
@@ -534,11 +574,19 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     .hero__visual {
       order: -1;
     }
+
+    .examples {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   @media (max-width: 640px) {
     .hero__stats {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .examples {
+      grid-template-columns: 1fr;
     }
   }
 </style>
