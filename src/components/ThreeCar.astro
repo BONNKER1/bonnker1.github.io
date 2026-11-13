@@ -110,24 +110,35 @@ const { vlt = 15 } = Astro.props;
         if (disposed) return;
         const model = gltf.scene;
         scene.add(model);
-        model.traverse((object: THREE.Object3D) => {
-          if (object instanceof THREE.Mesh) {
-            const box = new THREE.Box3().setFromObject(object);
-            if (box.isEmpty()) return;
-            const center = box.getCenter(new THREE.Vector3());
-            object.position.x -= center.x;
-            object.position.z -= center.z;
-            object.position.y -= center.y;
-          }
-        });
-        controls.target.set(0, 1.2, 0);
-        // Автоподгонка камеры под размер модели.
-        const modelBox = new THREE.Box3().setFromObject(model);
-        const modelSize = modelBox.getSize(new THREE.Vector3());
-        const modelCenter = modelBox.getCenter(new THREE.Vector3());
-        const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z) || 1;
-        camera.position.copy(modelCenter).add(new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(maxDim * 0.3));
-        controls.target.copy(modelCenter);
+
+        // Центрируем и масштабируем модель, чтобы она хорошо помещалась в кадр.
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const targetSize = 4; // целевой размер модели в сцене
+        const scale = (targetSize / maxDim) * 10; // "увеличь в 10 раз"
+        model.scale.setScalar(scale);
+
+        // Пересчитываем границы после масштаба и центрирования.
+        const scaledBox = new THREE.Box3().setFromObject(model);
+        const scaledSize = scaledBox.getSize(new THREE.Vector3());
+        const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+        const scaledMax = Math.max(scaledSize.x, scaledSize.y, scaledSize.z) || 1;
+
+        camera.position.copy(scaledCenter).add(
+          new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(scaledMax * 1.6),
+        );
+        camera.near = 0.01;
+        camera.far = Math.max(200, scaledMax * 20);
+        camera.updateProjectionMatrix();
+        controls.target.copy(scaledCenter);
+        controls.minDistance = Math.max(0.5, scaledMax * 0.4);
+        controls.maxDistance = scaledMax * 8;
+        controls.update();
+
         applyTint(scene, container.getAttribute('data-three-vlt')
           ? Number(container.getAttribute('data-three-vlt'))
           : 15);
