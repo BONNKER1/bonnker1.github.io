@@ -119,7 +119,7 @@ const { vlt = 15 } = Astro.props;
 
         const maxDim = Math.max(size.x, size.y, size.z) || 1;
         const targetSize = 4; // целевой размер модели в сцене
-        const scale = (targetSize / maxDim) * 10; // "увеличь в 10 раз"
+        const scale = (targetSize / maxDim) * 30; // заметно увеличить модель
         model.scale.setScalar(scale);
 
         // Пересчитываем границы после масштаба и центрирования.
