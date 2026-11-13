@@ -38,6 +38,9 @@ const frontSet = filmSets.find((set) => set.id === 'front')!;
 // Лобовое стекло продаём только для ВАЗ.
 const hasWindshield = brand.slug === 'lada';
 
+// Типы плёнки, которые реально есть на Wildberries — по ним и ведём на товар.
+const wbFilms = new Set(films.filter((film) => model.wb?.[film.id]).map((film) => film.id));
+
 // Прямая ссылка на товар WB, если он есть в выгрузке; иначе — на магазин.
 const wbUrl = (id?: number) =>
   id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : site.marketplaces.wildberries;
@@ -156,6 +159,7 @@ const payload = {
                       <span class="opt__title">{film.name}</span>
                       <span class="opt__meta">{film.short}</span>
                       <span class="opt__price">от {formatPrice(film.basePrice)}</span>
+                      {!wbFilms.has(film.id) && <span class="opt__tag">на WB нет</span>}
                     </span>
                   </label>
                 ))
@@ -249,6 +253,10 @@ const payload = {
             <Button href={site.marketplaces.ozon} variant="ghost" external>Купить на Ozon</Button>
           </div>
 
+          <p class="summary__note" data-wb-note hidden>
+            Этой плёнки нет на Wildberries — оформим заказ в Telegram, отправим напрямую.
+          </p>
+
           <p class="summary__note">
             В комплекте: вырезанные полотна, ракель и инструкция. На маркетплейсе выберите
             ту же модель и комплект.
@@ -331,6 +339,7 @@ const payload = {
   const vltEl = root.querySelector<HTMLElement>('[data-summary-vlt]');
   const telegramButtons = root.querySelectorAll<HTMLAnchorElement>('a[href*="t.me"]');
   const wbButton = root.querySelector<HTMLAnchorElement>('a[href*="wildberries.ru"]');
+  const wbNote = root.querySelector<HTMLElement>('[data-wb-note]');
 
   const checkedValue = (name: string) =>
     root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
@@ -361,11 +370,14 @@ const payload = {
       button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
     });
 
-    // Ведём на карточку именно той плёнки, что выбрана; нет артикула — в магазин.
+    // Ведём на карточку именно той плёнки, что выбрана. Если её нет на WB —
+    // прячем кнопку и предлагаем Telegram, чтобы не отправлять в общий магазин.
+    const id = data.wb[film.id];
     if (wbButton) {
-      const id = data.wb[film.id];
+      wbButton.style.display = id ? '' : 'none';
       wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbShop;
     }
+    if (wbNote) wbNote.hidden = Boolean(id);
   }
 
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {
@@ -486,6 +498,16 @@ const payload = {
     color: var(--color-accent);
     font-size: var(--step--1);
     font-family: var(--font-mono);
+  }
+
+  .opt__tag {
+    justify-self: start;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-muted);
+    font-size: 0.7rem;
+    line-height: 1.6;
   }
 
   .vlt-grid {
