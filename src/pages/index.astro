@@ -96,17 +96,19 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
       </div>
 
       <div class="hero__visual">
-        <div class="hero__panel">
+        <div class="hero__panel" data-vlt-panel>
           <div class="hero__panel-top">
             <span class="hero__panel-brand">Boonker / glass</span>
-            <span class="hero__panel-vlt">VLT 5%</span>
+            <span class="hero__panel-vlt" data-vlt-label>VLT 15%</span>
           </div>
-          <GlassSwatch vlt={5} label="Максимальное затемнение" />
-          <div class="hero__panel-scale" aria-hidden="true">
-            <span>5%</span>
-            <span>15%</span>
-            <span>35%</span>
-            <span>70%</span>
+          <div data-vlt-swatch>
+            <GlassSwatch vlt={15} label="Степень затемнения" />
+          </div>
+          <div class="hero__panel-scale" data-vlt-scale>
+            <button type="button" class="hero__vlt-btn" data-vlt="5">5%</button>
+            <button type="button" class="hero__vlt-btn is-active" data-vlt="15">15%</button>
+            <button type="button" class="hero__vlt-btn" data-vlt="35">35%</button>
+            <button type="button" class="hero__vlt-btn" data-vlt="70">70%</button>
           </div>
         </div>
         <ThreeCar vlt={15} />
@@ -244,6 +246,38 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   </section>
 </BaseLayout>
 
+<script>
+  const panel = document.querySelector<HTMLElement>('[data-vlt-panel]');
+  if (panel) {
+    const label = panel.querySelector<HTMLElement>('[data-vlt-label]');
+    const swatchWrap = panel.querySelector<HTMLElement>('[data-vlt-swatch]');
+    const swatch = swatchWrap?.querySelector<HTMLElement>('.swatch');
+    const swatchValue = swatchWrap?.querySelector<HTMLElement>('.swatch__value');
+    const buttons = panel.querySelectorAll<HTMLButtonElement>('.hero__vlt-btn');
+    const three = document.querySelector<HTMLElement>('.three-car');
+
+    const setVlt = (vlt: number) => {
+      if (label) label.textContent = `VLT ${vlt}%`;
+      if (swatch) {
+        const darkness = Math.min(0.92, Math.max(0.15, 1 - vlt / 100));
+        swatch.style.setProperty('--darkness', String(darkness));
+      }
+      if (swatchValue) swatchValue.textContent = `${vlt}%`;
+      if (three) three.setAttribute('data-three-vlt', String(vlt));
+      const api = (window as unknown as { __threeCar?: { setTint: (v: number) => void } }).__threeCar;
+      if (api) api.setTint(vlt);
+      buttons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.vlt) === vlt));
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const vlt = Number(btn.dataset.vlt || 15);
+        setVlt(vlt);
+      });
+    });
+  }
+</script>
+
 <style>
   .hero {
     position: relative;
@@ -324,6 +358,25 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     color: var(--color-muted);
     font-family: var(--font-mono);
     font-size: 0.75rem;
+    gap: var(--space-2);
+  }
+
+  .hero__vlt-btn {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .hero__vlt-btn:hover,
+  .hero__vlt-btn.is-active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   }
 
   .hero__badges {
