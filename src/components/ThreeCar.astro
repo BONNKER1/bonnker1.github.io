@@ -90,7 +90,6 @@ const { vlt = 15 } = Astro.props;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x02060a);
-    scene.fog = new THREE.Fog(0x02060a, 18, 80);
 
     const camera = new THREE.PerspectiveCamera(
       42,
@@ -144,19 +143,24 @@ const { vlt = 15 } = Astro.props;
           new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(scaledMax * 1.6),
         );
         camera.near = 0.01;
-        camera.far = Math.max(200, scaledMax * 20);
+        camera.far = Math.max(2000, scaledMax * 50);
         camera.updateProjectionMatrix();
         controls.target.copy(scaledCenter);
         controls.minDistance = Math.max(0.5, scaledMax * 0.4);
         controls.maxDistance = scaledMax * 8;
         controls.update();
 
+        scene.fog = new THREE.Fog(0x02060a, scaledMax * 2.5, scaledMax * 12);
+
         // Tron-style grid floor
         const gridSize = Math.max(120, scaledMax * 12);
         const gridDiv = 80;
         const grid = new THREE.GridHelper(gridSize, gridDiv, 0x00eaff, 0x004b66);
-        (grid.material as THREE.Material).transparent = true;
-        (grid.material as THREE.Material).opacity = 0.55;
+        const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
+        for (const m of gridMaterials) {
+          m.transparent = true;
+          m.opacity = 0.55;
+        }
         grid.position.y = scaledBox.min.y - 0.02;
         scene.add(grid);
 
