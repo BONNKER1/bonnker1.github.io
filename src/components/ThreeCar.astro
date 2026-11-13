@@ -126,7 +126,7 @@ const { vlt = 15 } = Astro.props;
         const modelSize = modelBox.getSize(new THREE.Vector3());
         const modelCenter = modelBox.getCenter(new THREE.Vector3());
         const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z) || 1;
-        camera.position.copy(modelCenter).add(new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(maxDim * 3));
+        camera.position.copy(modelCenter).add(new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(maxDim * 0.3));
         controls.target.copy(modelCenter);
         applyTint(scene, container.getAttribute('data-three-vlt')
           ? Number(container.getAttribute('data-three-vlt'))
