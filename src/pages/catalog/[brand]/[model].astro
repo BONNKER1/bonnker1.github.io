@@ -414,6 +414,10 @@ const payload = {
       ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : data.ozonShop;
     }
     if (ozonNote) ozonNote.hidden = Boolean(offer);
+
+    // 3D: тонируем стекла в модели Porsche 911 под выбранную степень затемнения.
+    const threeCar = (window as unknown as { __threeCar?: { setTint: (value: number) => void } }).__threeCar;
+    if (threeCar) threeCar.setTint(Number(vlt));
   }
 
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {

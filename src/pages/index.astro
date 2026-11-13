@@ -4,6 +4,7 @@ import Section from '../components/Section.astro';
 import CarPicker from '../components/CarPicker.astro';
 import FilmCard from '../components/FilmCard.astro';
 import GlassSwatch from '../components/GlassSwatch.astro';
+import ThreeCar from '../components/ThreeCar.astro';
 import ProductCard from '../components/ProductCard.astro';
 import Button from '../components/Button.astro';
 import { site } from '../data/site';
@@ -108,33 +109,7 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
             <span>70%</span>
           </div>
         </div>
-        <svg
-          class="hero__car"
-          viewBox="0 0 360 170"
-          role="img"
-          aria-label="Пример установки: лекал вырезан по стеклу, остальное стекло затемнено"
-        >
-          <ellipse cx="180" cy="146" rx="140" ry="8" fill="#000" opacity="0.35" />
-          <rect x="30" y="86" width="300" height="40" rx="18" fill="#e0342b" />
-          <rect x="104" y="50" width="152" height="36" rx="10" fill="#0b1620" />
-          <rect x="104" y="50" width="152" height="36" rx="10" fill="none" stroke="#3c4550" stroke-width="2" />
-          <circle cx="76" cy="128" r="18" fill="#0a0c0e" stroke="#3c4550" stroke-width="3" />
-          <circle cx="76" cy="128" r="8" fill="#161b22" />
-          <circle cx="264" cy="128" r="18" fill="#0a0c0e" stroke="#3c4550" stroke-width="3" />
-          <circle cx="264" cy="128" r="8" fill="#161b22" />
-          <circle cx="180" cy="30" r="22" fill="#e0342b" />
-          <text
-            x="180"
-            y="34"
-            text-anchor="middle"
-            font-family="JetBrains Mono, monospace"
-            font-size="16"
-            font-weight="700"
-            fill="#fff7f5"
-          >
-            35%
-          </text>
-        </svg>
+        <ThreeCar vlt={15} />
         <div class="hero__badges">
           <span class="chip">Без клея</span>
           <span class="chip">Многоразовая</span>
@@ -313,12 +288,6 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   .hero__visual {
     display: grid;
     gap: var(--space-4);
-  }
-
-  .hero__car {
-    display: block;
-    width: 100%;
-    height: auto;
   }
 
   .hero__panel {
