@@ -76,11 +76,10 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     <div class="container hero__inner">
       <div class="hero__copy">
         <p class="eyebrow">Съёмная тонировка по лекалам</p>
-        <h1>Тонировка под вашу машину — без клея и следов</h1>
+        <h1>Тонировка по лекалам — без клея и следов</h1>
         <p class="lead">
-          Силиконовая, классическая, атермальная и жёсткая Premium плёнка, вырезанная по
-          лекалам. Передние и задние полусферы или полный комплект. Ставится за пару минут,
-          снимается ещё быстрее.
+          Плёнка вырезана по точному лекалу вашего авто. Силикон, классика, атермальна или
+          жёсткая Premium — без клея, без следов. Ставится за пару минут, снимается ещё быстрее.
         </p>
         <CarPicker />
         <dl class="hero__stats">
@@ -109,6 +108,20 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
             <span>70%</span>
           </div>
         </div>
+        <svg
+          class="hero__car"
+          viewBox="0 0 360 150"
+          role="img"
+          aria-label="Пример установки: лекал вырезан по стеклу, остальное стекло затемнено"
+        >
+          <rect x="28" y="84" width="304" height="40" rx="18" fill="#222a33" />
+          <rect x="108" y="50" width="146" height="34" rx="10" fill="#0b1620" />
+          <rect x="108" y="50" width="146" height="34" rx="10" fill="none" stroke="#2c3844" stroke-width="2" />
+          <circle cx="78" cy="126" r="17" fill="#0a0c0e" stroke="#3c4550" stroke-width="3" />
+          <circle cx="78" cy="126" r="7" fill="#161b22" />
+          <circle cx="262" cy="126" r="17" fill="#0a0c0e" stroke="#3c4550" stroke-width="3" />
+          <circle cx="262" cy="126" r="7" fill="#161b22" />
+        </svg>
         <div class="hero__badges">
           <span class="chip">Без клея</span>
           <span class="chip">Многоразовая</span>
@@ -120,8 +133,8 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
 
   <Section
     eyebrow="Ассортимент"
-    title="Четыре типа плёнки под разные задачи"
-    description="Все варианты — съёмные и вырезаются по лекалу вашего авто. Разница в плотности, ресурсе и цене."
+    title="Четыре типа плёнки — под вашу задачу"
+    description="Каждый тип — съёмная плёнка, вырезанная по лекалу. Разница только в плотности, ресурсе и цене."
   >
     <div class="grid grid--2">
       {films.map((film) => <FilmCard film={film} />)}
@@ -248,9 +261,7 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     position: relative;
     overflow: hidden;
     padding-block: clamp(3rem, 1rem + 7vw, 6rem);
-    background:
-      radial-gradient(60% 80% at 85% 0%, rgb(216 255 62 / 0.1) 0%, transparent 60%),
-      radial-gradient(50% 60% at 0% 20%, rgb(80 130 160 / 0.12) 0%, transparent 60%);
+    background: radial-gradient(70% 90% at 85% 0%, rgb(224 52 43 / 0.16) 0%, transparent 60%), var(--color-bg);
   }
 
   .hero__inner {
@@ -289,6 +300,12 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   .hero__visual {
     display: grid;
     gap: var(--space-4);
+  }
+
+  .hero__car {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   .hero__panel {
@@ -456,7 +473,7 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     padding-block: clamp(3rem, 1rem + 6vw, 5rem);
   }
 
-  .cta__inner {
+      .cta__inner {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -465,9 +482,7 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     padding: clamp(1.5rem, 4vw, 3rem);
     border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
     border-radius: var(--radius-lg);
-    background:
-      radial-gradient(80% 120% at 100% 0%, rgb(216 255 62 / 0.12) 0%, transparent 55%),
-      var(--color-surface);
+    background: var(--color-surface);
   }
 
   .cta__actions {
