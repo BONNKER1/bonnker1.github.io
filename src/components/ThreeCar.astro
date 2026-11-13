@@ -42,10 +42,12 @@ const { vlt = 15 } = Astro.props;
 
   function glassMeshes(root: THREE.Object3D): THREE.Mesh[] {
     const found = new Set<THREE.Mesh>();
+    const include = /glass|window|windshield|windscreen/i;
+    const exclude = /light|lamp|head|fog|tail|indicator|signal|reflector|bulb|lens/i;
     const walk = (object: THREE.Object3D): void => {
       if (object instanceof THREE.Mesh) {
         const name = object.name || '';
-        if (/glass|window|windshield/i.test(name)) found.add(object);
+        if (include.test(name) && !exclude.test(name)) found.add(object);
       }
       for (const child of object.children) walk(child);
     };
@@ -58,14 +60,23 @@ const { vlt = 15 } = Astro.props;
     const key = Object.keys(TINT).includes(String(vlt)) ? vlt : 15;
     const { opacity, color } = TINT[key];
     for (const mesh of glassMeshes(scene)) {
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      for (const material of materials) {
-        const mat = material as THREE.MeshPhysicalMaterial;
-        mat.transparent = true;
-        mat.opacity = opacity;
-        mat.color.setHex(color);
-        mat.roughness = 0.08;
-        mat.depthWrite = false;
+      const data = mesh.userData as { __tintedMaterials?: THREE.Material[] };
+      if (!data.__tintedMaterials) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        data.__tintedMaterials = materials.map((material) => {
+          const mat = material.clone() as THREE.MeshPhysicalMaterial | THREE.MeshStandardMaterial;
+          mat.transparent = true;
+          if ('roughness' in mat) mat.roughness = 0.08;
+          mat.depthWrite = false;
+          mat.needsUpdate = true;
+          return mat;
+        });
+        mesh.material = Array.isArray(mesh.material) ? data.__tintedMaterials : data.__tintedMaterials[0];
+      }
+      for (const material of data.__tintedMaterials) {
+        material.opacity = opacity;
+        (material as THREE.MeshPhysicalMaterial).color.setHex(color);
+        material.needsUpdate = true;
       }
     }
   }
