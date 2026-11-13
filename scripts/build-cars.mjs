@@ -81,6 +81,14 @@ const FILM_PREFIX = [
   /^съёмная/i,
 ];
 
+/** Тип плёнки по названию товара: артикулы WB раскладываем по типам. */
+function filmKind(name) {
+  if (/жёстк|жестк|premium|премиум|strong/i.test(name)) return 'hard';
+  if (/атермальн/i.test(name)) return 'athermal';
+  if (/классическ/i.test(name)) return 'classic';
+  return 'silicone';
+}
+
 const HOMOGLYPHS = {
   а: 'a', в: 'b', е: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p', с: 'c', т: 't', у: 'y', х: 'x', і: 'i',
   А: 'A', В: 'B', Е: 'E', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P', С: 'C', Т: 'T', У: 'Y', Х: 'X',
@@ -112,6 +120,16 @@ const DISPLAY_FIX = {
 /** Ручные переименования моделей: ключ `${марка}/${slug}`. */
 const MODEL_RENAME = {
   'gaz/next': 'Газон Next',
+  'lada/priora-2110-2111-2112': '2110 2111 2112',
+  'dodge/durango-dakota': 'Durango',
+  'citroen/c4-spacetourer-c': 'C4 Spacetourer',
+  'citroen/grand-c4': 'Grand C4 Spacetourer',
+};
+
+/** Дополнительные написания для поиска: `${марка}/${slug}` → алиасы. */
+const EXTRA_ALIASES = {
+  'lada/2110-2111-2112': ['приора'],
+  'dodge/durango': ['дакота'],
 };
 const BODY_WORDS = [
   [/хэтчбек|hatchback/i, 'хэтчбек'],
@@ -307,6 +325,7 @@ for (const product of data) {
     slug = slugify(display);
   }
   const key = `${make.slug}/${slug}`;
+  for (const extra of EXTRA_ALIASES[key] ?? []) aliases.push(extra);
   const prev = entries.get(key);
   if (prev) {
     prev.count += 1;
@@ -323,8 +342,18 @@ for (const product of data) {
       body,
       bodySet: new Set(body ? [body] : []),
       aliases: new Set(aliases.map((a) => a.toLowerCase())),
+      wb: {},
       count: 1,
     });
+  }
+
+  // Артикул WB для типа плёнки: из нескольких карточек берём самую обзвоненную.
+  const entry = entries.get(key);
+  const kind = filmKind(name);
+  const feedbacks = Number(product.feedbacks) || 0;
+  const current = entry.wb[kind];
+  if (!current || feedbacks > current.feedbacks) {
+    entry.wb[kind] = { id: Number(product.id), feedbacks };
   }
 }
 
@@ -377,10 +406,13 @@ for (const [brandSlug, needles] of POPULAR) {
 }
 
 const esc = (s) => s.replace(/'/g, "\\'");
+const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard'];
 
 let out = `// ВНИМАНИЕ: файл сгенерирован из выгрузки Wildberries (import/wb-api.json).
 // Пересобрать: node scripts/build-cars.mjs
 // Правки вручную лучше вносить в scripts/build-cars.mjs (словарь марок и правила разбора).
+
+import type { FilmId } from './films';
 
 export interface CarModel {
   slug: string;
@@ -390,6 +422,8 @@ export interface CarModel {
   popular?: boolean;
   /** Русские названия и частые варианты написания для поиска. */
   aliases?: string[];
+  /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
+  wb?: Partial<Record<FilmId, number>>;
 }
 
 export interface CarBrand {
@@ -419,6 +453,8 @@ for (const brand of brandList) {
     if (popular.has(`${brand.slug}/${m.slug}`)) parts.push('popular: true');
     const al = [...m.aliases].filter((a) => a && a !== m.name.toLowerCase());
     if (al.length && al.length <= 4) parts.push(`aliases: [${al.map((a) => `'${esc(a)}'`).join(', ')}]`);
+    const wb = FILM_ORDER.filter((kind) => m.wb[kind]).map((kind) => `${kind}: ${m.wb[kind].id}`);
+    if (wb.length) parts.push(`wb: { ${wb.join(', ')} }`);
     out += `      { ${parts.join(', ')} },\n`;
   }
   out += `    ],\n  },\n`;

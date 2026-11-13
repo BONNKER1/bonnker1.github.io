@@ -38,6 +38,10 @@ const frontSet = filmSets.find((set) => set.id === 'front')!;
 // Лобовое стекло продаём только для ВАЗ.
 const hasWindshield = brand.slug === 'lada';
 
+// Прямая ссылка на товар WB, если он есть в выгрузке; иначе — на магазин.
+const wbUrl = (id?: number) =>
+  id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : site.marketplaces.wildberries;
+
 const lowPrice = Math.min(...films.map((film) => priceFor(film, frontSet)));
 const highPrice = Math.max(
   ...films.map((film) => priceFor(film, fullSet)),
@@ -94,6 +98,8 @@ const payload = {
   sets: filmSets.map(({ id, name }) => ({ id, name })),
   windshield: hasWindshield ? windshieldSet : null,
   telegram: site.telegram,
+  wb: model.wb ?? {},
+  wbShop: site.marketplaces.wildberries,
 };
 ---
 <BaseLayout
@@ -239,7 +245,7 @@ const payload = {
 
           <div class="summary__actions">
             <Button href={site.telegram} variant="primary" external>Заказать в Telegram</Button>
-            <Button href={site.marketplaces.wildberries} variant="secondary" external>Купить на Wildberries</Button>
+            <Button href={wbUrl(model.wb?.silicone)} variant="secondary" external>Купить на Wildberries</Button>
             <Button href={site.marketplaces.ozon} variant="ghost" external>Купить на Ozon</Button>
           </div>
 
@@ -309,6 +315,9 @@ const payload = {
     sets: SetData[];
     windshield: WindshieldData | null;
     telegram: string;
+    /** Артикулы Wildberries: тип плёнки → id товара. */
+    wb: Record<string, number>;
+    wbShop: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-configurator]');
@@ -321,6 +330,7 @@ const payload = {
   const setEl = root.querySelector<HTMLElement>('[data-summary-set]');
   const vltEl = root.querySelector<HTMLElement>('[data-summary-vlt]');
   const telegramButtons = root.querySelectorAll<HTMLAnchorElement>('a[href*="t.me"]');
+  const wbButton = root.querySelector<HTMLAnchorElement>('a[href*="wildberries.ru"]');
 
   const checkedValue = (name: string) =>
     root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
@@ -350,6 +360,12 @@ const payload = {
     telegramButtons.forEach((button) => {
       button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
     });
+
+    // Ведём на карточку именно той плёнки, что выбрана; нет артикула — в магазин.
+    if (wbButton) {
+      const id = data.wb[film.id];
+      wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbShop;
+    }
   }
 
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {
