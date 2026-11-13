@@ -85,11 +85,12 @@ const { vlt = 15 } = Astro.props;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0x0b0d10);
+    renderer.setClearColor(0x02060a);
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0d10);
+    scene.background = new THREE.Color(0x02060a);
+    scene.fog = new THREE.Fog(0x02060a, 18, 80);
 
     const camera = new THREE.PerspectiveCamera(
       42,
@@ -149,6 +150,28 @@ const { vlt = 15 } = Astro.props;
         controls.minDistance = Math.max(0.5, scaledMax * 0.4);
         controls.maxDistance = scaledMax * 8;
         controls.update();
+
+        // Tron-style grid floor
+        const gridSize = Math.max(120, scaledMax * 12);
+        const gridDiv = 80;
+        const grid = new THREE.GridHelper(gridSize, gridDiv, 0x00eaff, 0x004b66);
+        (grid.material as THREE.Material).transparent = true;
+        (grid.material as THREE.Material).opacity = 0.55;
+        grid.position.y = scaledBox.min.y - 0.02;
+        scene.add(grid);
+
+        // Светящаяся плоскость под сеткой для "неонового" эффекта
+        const glowGeo = new THREE.PlaneGeometry(gridSize, gridSize);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: 0x001018,
+          transparent: true,
+          opacity: 0.65,
+          side: THREE.DoubleSide,
+        });
+        const glowPlane = new THREE.Mesh(glowGeo, glowMat);
+        glowPlane.rotation.x = -Math.PI / 2;
+        glowPlane.position.y = grid.position.y - 0.01;
+        scene.add(glowPlane);
 
         applyTint(scene, container.getAttribute('data-three-vlt')
           ? Number(container.getAttribute('data-three-vlt'))
@@ -223,8 +246,9 @@ const { vlt = 15 } = Astro.props;
     height: 420px;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    border: 1px solid var(--color-border);
-    background: radial-gradient(120% 120% at 20% 0%, #141a20 0%, #0a0e12 55%, #07090c 100%);
+    border: 1px solid color-mix(in srgb, #00eaff 25%, var(--color-border));
+    background: radial-gradient(120% 120% at 50% 0%, #041018 0%, #02060a 55%, #010305 100%);
+    box-shadow: 0 0 0 1px rgb(0 234 255 / 0.08) inset;
   }
 
   .three-car__error {
