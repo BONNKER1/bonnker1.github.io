@@ -8,7 +8,7 @@ export const site = {
   telegram: 'https://t.me/kabuda1837',
   telegramHandle: '@kabuda1837',
   phone: '',
-  email: '',
+  email: 'kazulink@bk.ru',
   marketplaces: {
     wildberries: 'https://www.wildberries.ru/seller/585856',
     ozon: 'https://www.ozon.ru/seller/boonker-semnaya-tonirovka/',
