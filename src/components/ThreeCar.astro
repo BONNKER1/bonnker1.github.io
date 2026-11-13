@@ -34,10 +34,10 @@ const { vlt = 15 } = Astro.props;
   const MODEL_URL = '/models/porsche911.glb';
 
   const TINT: Record<number, { opacity: number; color: number }> = {
-    5: { opacity: 0.08, color: 0xc9c9c9 },
-    15: { opacity: 0.2, color: 0x8f8f8f },
-    35: { opacity: 0.38, color: 0x404040 },
-    70: { opacity: 0.55, color: 0x121212 },
+    5: { opacity: 0.72, color: 0x050505 },  // самая тёмная
+    15: { opacity: 0.52, color: 0x121212 },
+    35: { opacity: 0.32, color: 0x404040 },
+    70: { opacity: 0.1, color: 0xb0b0b0 },  // самая светлая
   };
 
   function glassMeshes(root: THREE.Object3D): THREE.Mesh[] {
