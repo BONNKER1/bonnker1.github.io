@@ -30,6 +30,8 @@ interface Props {
 
 const { brand, model } = Astro.props as Props;
 const brandLabel = brand.name.replace(/\s*\([^)]*\)/, '');
+const modelMeta = [model.years, model.body].filter(Boolean).join(', ');
+const modelMetaText = modelMeta ? ` (${modelMeta})` : '';
 const fullSet = filmSets.find((set) => set.id === 'full')!;
 const frontSet = filmSets.find((set) => set.id === 'front')!;
 
@@ -45,7 +47,7 @@ const highPrice = Math.max(
 const faq = [
   {
     question: `Подойдёт ли тонировка на ${brandLabel} ${model.name}?`,
-    answer: `Да, лекало сделано под ${brandLabel} ${model.name} (${model.years}, ${model.body}). Комплект уже вырезан по форме стёкол, подрезать ничего не нужно.`,
+    answer: `Да, лекало сделано под ${brandLabel} ${model.name}${modelMetaText}. Комплект уже вырезан по форме стёкол, подрезать ничего не нужно.`,
   },
   {
     question: 'Можно ли тонировать передние стёкла?',
@@ -96,7 +98,7 @@ const payload = {
 ---
 <BaseLayout
   title={`Тонировка ${brandLabel} ${model.name} по лекалам`}
-  description={`Съёмная тонировка на ${brandLabel} ${model.name} (${model.years}). Лекала под передние и задние полусферы, полный комплект. Силиконовая, классическая, атермальная и жёсткая Premium плёнка. Цена от ${formatPrice(lowPrice)}.`}
+  description={`Съёмная тонировка на ${brandLabel} ${model.name}${modelMetaText}. Лекала под передние и задние полусферы, полный комплект. Силиконовая, классическая, атермальная и жёсткая Premium плёнка. Цена от ${formatPrice(lowPrice)}.`}
   schemas={schemas}
 >
   <div class="container">
@@ -117,7 +119,7 @@ const payload = {
           <p class="eyebrow">Лекало в базе</p>
           <h1>Тонировка {brandLabel} {model.name}</h1>
           <p class="lead">
-            {model.years} · {model.body}. Комплект вырезан по форме стёкол — без подрезки и
+            {modelMeta ? `${modelMeta}. ` : ''}Комплект вырезан по форме стёкол — без подрезки и
             подгонки.
           </p>
         </div>

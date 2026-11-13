@@ -67,11 +67,12 @@ export function productSchema({
 }) {
   const name = `Тонировка ${brand.name} ${model.name} — ${film.name}`;
   const url = `/catalog/${brand.slug}/${model.slug}/`;
+  const meta = [model.years, model.body].filter(Boolean).join(', ');
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name,
-    description: `${name}. Лекала под ${brand.name} ${model.name} (${model.years}, ${model.body}). Передние и задние полусферы, полный комплект.`,
+    description: `${name}. Лекала под ${brand.name} ${model.name}${meta ? ` (${meta})` : ''}. Передние и задние полусферы, полный комплект.`,
     url: canonicalUrl(url),
     image: canonicalUrl('/og-default.png'),
     brand: { '@type': 'Brand', name: site.name },

@@ -53,9 +53,14 @@ pnpm og        # пересобрать OG-картинку из SVG
 - Цены считаются одной формулой `priceFor()` в `src/data/films.ts` — не дублировать расчёт в разметке.
 - Перед «готово» — `pnpm build`, `pnpm check` и чек-лист `.opencode/skills/web-build/references/launch-checklist.md`.
 
+## База лекал
+
+- `src/data/cars.ts` генерируется: 33 марки, 231 модель из ассортимента WB-магазина.
+- Пересборка: `node scripts/wb-import.mjs 585856` → `node scripts/build-cars.mjs`.
+- Правила разбора названий и ручные поправки — в начале `scripts/build-cars.mjs`.
+
 ## Что заменить перед запуском
 
-- `src/data/cars.ts` — демо-база (15 марок, 43 модели) на реальную базу лекал из выгрузки WB/Ozon.
 - `src/data/site.ts` — email (сейчас пустой, скрыт), домен при переезде с GitHub Pages.
 - `astro.config.mjs`, `public/robots.txt` — домен `bonnker1.github.io`.
 - Цены в `src/data/films.ts` — реальные: 1 050 / 1 350 / 1 550 / 1 750 ₽ за 2 стекла,

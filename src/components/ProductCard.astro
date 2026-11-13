@@ -1,5 +1,6 @@
 ---
 import type { CarBrand, CarModel } from '../data/cars';
+import { modelSearchText } from '../data/cars';
 import { films, formatPrice } from '../data/films';
 
 interface Props {
@@ -9,8 +10,8 @@ interface Props {
 
 const { brand, model } = Astro.props;
 const minPrice = Math.min(...films.map((film) => film.basePrice));
-const searchText = [brand.name, ...(brand.aliases ?? []), model.name, ...(model.aliases ?? []), model.body]
-  .join(' ');
+const meta = [model.years, model.body].filter(Boolean);
+const searchText = modelSearchText(brand, model);
 ---
 <a
   class="car-card"
@@ -21,11 +22,11 @@ const searchText = [brand.name, ...(brand.aliases ?? []), model.name, ...(model.
 >
   <span class="car-card__top">
     <span class="car-card__brand">{brand.name}</span>
-    <span class="car-card__years">{model.years}</span>
+    {model.years && <span class="car-card__years">{model.years}</span>}
   </span>
   <span class="car-card__name">{model.name}</span>
   <span class="car-card__bottom">
-    <span class="car-card__body">{model.body}</span>
+    <span class="car-card__body">{meta.length ? meta.join(' · ') : 'лекала в наличии'}</span>
     <span class="car-card__price">от {formatPrice(minPrice)}</span>
   </span>
 </a>

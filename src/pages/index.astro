@@ -155,7 +155,7 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     id="populyarnye"
     eyebrow="Каталог"
     title="Популярные модели"
-    description={`В базе уже ${totalModels} лекал популярных автомобилей — от ВАЗ до Haval.`}
+    description={`В базе ${totalModels} лекал: от ВАЗ и Toyota до BMW и Land Rover.`}
   >
     <div class="grid grid--4">
       {popularModels.map(({ brand, model }) => <ProductCard brand={brand} model={model} />)}

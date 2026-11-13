@@ -45,7 +45,8 @@ import { brands } from '../data/cars';
     modelSelect.disabled = false;
     modelSelect.append(new Option('Выберите модель', ''));
     brand.models.forEach((model) => {
-      modelSelect.append(new Option(`${model.name} · ${model.years}`, model.slug));
+      const label = model.years ? `${model.name} · ${model.years}` : model.name;
+      modelSelect.append(new Option(label, model.slug));
     });
   });
 
