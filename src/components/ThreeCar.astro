@@ -121,6 +121,13 @@ const { vlt = 15 } = Astro.props;
           }
         });
         controls.target.set(0, 1.2, 0);
+        // Автоподгонка камеры под размер модели.
+        const modelBox = new THREE.Box3().setFromObject(model);
+        const modelSize = modelBox.getSize(new THREE.Vector3());
+        const modelCenter = modelBox.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z) || 1;
+        camera.position.copy(modelCenter).add(new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(maxDim * 3));
+        controls.target.copy(modelCenter);
         applyTint(scene, container.getAttribute('data-three-vlt')
           ? Number(container.getAttribute('data-three-vlt'))
           : 15);
