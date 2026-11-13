@@ -7,7 +7,12 @@ interface Props {
 const { vlt = 15 } = Astro.props;
 ---
 
-<div class="three-car" data-three-vlt={vlt}></div>
+<div class="three-car" data-three-vlt={vlt}>
+  <p class="three-car__error" hidden>
+    Не удалось загрузить 3D-модель. Проверьте, что файл <code>/models/porsche911.glb</code>
+    доступен, и попробуйте обновить страницу.
+  </p>
+</div>
 
 <script>
   import * as THREE from 'three';
@@ -123,6 +128,8 @@ const { vlt = 15 } = Astro.props;
       undefined,
       (error: unknown) => {
         console.error('[ThreeCar] Не удалось загрузить 3D модель Porsche 911:', error);
+        const errorEl = container.querySelector<HTMLElement>('.three-car__error');
+        if (errorEl) errorEl.hidden = false;
       },
     );
 
@@ -189,5 +196,22 @@ const { vlt = 15 } = Astro.props;
     overflow: hidden;
     border: 1px solid var(--color-border);
     background: radial-gradient(120% 120% at 20% 0%, #141a20 0%, #0a0e12 55%, #07090c 100%);
+  }
+
+  .three-car__error {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    margin: 0;
+    text-align: center;
+    color: var(--color-muted);
+    font-size: var(--step-0);
+    background: rgb(8 9 10 / 0.85);
+  }
+
+  .three-car__error[hidden] {
+    display: none;
   }
 </style>
