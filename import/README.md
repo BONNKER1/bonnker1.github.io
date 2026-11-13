@@ -1,12 +1,21 @@
-# Импорт ассортимента с Wildberries
+# Импорт ассортимента с Wildberries и Ozon
+
+## Wildberries
 
 Данные магазина `https://www.wildberries.ru/seller/585856` лежат в `import/wb-api.json`
 (1100 товаров: id, название, бренд). Из них генерируется база лекал `src/data/cars.ts`.
+
+## Ozon
+
+Данные магазина `https://www.ozon.ru/seller/boonker-semnaya-tonirovka/` лежат в `import/ozon-api.json`
+(товары: id, название, url, тип плёнки, комплект, варианты по светопропусканию). Из них тоже
+строится база лекал `src/data/cars.ts` (поле `ozon`).
 
 ## Обновить базу (обычный путь)
 
 ```sh
 node scripts/wb-import.mjs 585856   # выгрузить товары с WB в import/wb-api.json
+node scripts/ozon-import.mjs        # выгрузить товары с Ozon в import/ozon-api.json
 node scripts/build-cars.mjs         # собрать src/data/cars.ts по правилам разбора
 pnpm build && pnpm check && pnpm links
 ```

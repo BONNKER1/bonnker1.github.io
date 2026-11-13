@@ -65,6 +65,8 @@ MAKE_WORDS.add('йонг');
 const SKIP = [/^\s*на\s+холсте/i, /ракель/i, /фетр/i, /^полоса\s+на\s+лобовое/i, /^съёмная\s+тонировка$/i, /^тонировка$/i];
 
 const FILM_PREFIX = [
+  /^съёмная\s+многоразовая\s+силиконовая\s+тонировка/i,
+  /^съёмная\s+многоразовая\s+тонировка/i,
   /^съёмная\s+тонировка\s+жёсткая\s+premium/i,
   /^съёмная\s+тонировка\s+жёсткая/i,
   /^жёсткая\s+тонировка/i,
@@ -172,10 +174,19 @@ function slugify(text) {
 /* 2. Разбор названий                                                  */
 /* ------------------------------------------------------------------ */
 
-const data = JSON.parse(fs.readFileSync('import/wb-api.json', 'utf8'));
+const wbData = JSON.parse(fs.readFileSync('import/wb-api.json', 'utf8'));
+const OZON_FILE = 'import/ozon-api.json';
+const ozonData = fs.existsSync(OZON_FILE)
+  ? JSON.parse(fs.readFileSync(OZON_FILE, 'utf8'))
+  : { products: [] };
+const data = [
+  ...wbData.map((product) => ({ ...product, source: 'wb' })),
+  ...(ozonData.products ?? []).map((product) => ({ ...product, source: 'ozon' })),
+];
 
 const entries = new Map(); // `${brandSlug}/${modelSlug}` -> {brandSlug, name, years, aliases:Set, count}
 const skipped = [];
+const ozonSkipped = [];
 
 function detectMake(rest) {
   const lower = rest.toLowerCase();
@@ -192,6 +203,33 @@ function detectMake(rest) {
     return { make: MAKE_BY_ALIAS.get(fixed.toLowerCase()), tail: rest.split(' ').slice(1).join(' ') };
   }
   return null;
+}
+
+/** Прикрепляем товар Ozon к модели: тип плёнки → комплект → варианты по светопропусканию. */
+function attachOzon(entry, product) {
+  const film = product.film;
+  // У карточек про боковые стёкла Ozon нет характеристики «Место установки» —
+  // считаем их полным комплектом (обе стороны).
+  const place = product.place || 'full';
+  if (!film) {
+    ozonSkipped.push(product.name || String(product.id));
+    return;
+  }
+  const byFilm = (entry.ozon[film] ??= {});
+  const vlt = {};
+  for (const [value, item] of Object.entries(product.vlt ?? {})) {
+    const sku = Number(item?.id);
+    if (Number(value) && sku) vlt[Number(value)] = sku;
+  }
+  const prev = byFilm[place];
+  if (!prev) {
+    byFilm[place] = { id: Number(product.id), vlt };
+    return;
+  }
+  const nextCount = Object.keys(vlt).length;
+  const prevCount = Object.keys(prev.vlt ?? {}).length;
+  Object.assign((prev.vlt ??= {}), vlt);
+  if (nextCount > prevCount) prev.id = Number(product.id);
 }
 
 for (const product of data) {
@@ -325,11 +363,17 @@ for (const product of data) {
     slug = slugify(display);
   }
   const key = `${make.slug}/${slug}`;
+  // Ozon-товары только прикрепляем к моделям, которые уже есть в базе лекал WB.
+  if (product.source === 'ozon' && !entries.has(key)) {
+    ozonSkipped.push(name);
+    continue;
+  }
   for (const extra of EXTRA_ALIASES[key] ?? []) aliases.push(extra);
   const prev = entries.get(key);
   if (prev) {
-    prev.count += 1;
+    if (product.source !== 'ozon') prev.count += 1;
     if (years) prev.yearSet.add(years);
+    if (body) prev.bodySet.add(body);
     for (const a of aliases) prev.aliases.add(a.toLowerCase());
   } else {
     entries.set(key, {
@@ -343,12 +387,18 @@ for (const product of data) {
       bodySet: new Set(body ? [body] : []),
       aliases: new Set(aliases.map((a) => a.toLowerCase())),
       wb: {},
+      ozon: {},
       count: 1,
     });
   }
 
-  // Артикул WB для типа плёнки: из нескольких карточек берём самую обзвоненную.
   const entry = entries.get(key);
+  if (product.source === 'ozon') {
+    attachOzon(entry, product);
+    continue;
+  }
+
+  // Артикул WB для типа плёнки: из нескольких карточек берём самую обзвоненную.
   const kind = filmKind(name);
   const feedbacks = Number(product.feedbacks) || 0;
   const current = entry.wb[kind];
@@ -407,12 +457,40 @@ for (const [brandSlug, needles] of POPULAR) {
 
 const esc = (s) => s.replace(/'/g, "\\'");
 const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard'];
+const OZON_SET_ORDER = ['front', 'rear', 'full', 'windshield'];
 
-let out = `// ВНИМАНИЕ: файл сгенерирован из выгрузки Wildberries (import/wb-api.json).
+/** Литерал поля ozon для сгенерированного файла. */
+function ozonLiteral(model) {
+  const groups = [];
+  for (const kind of FILM_ORDER) {
+    const places = model.ozon[kind];
+    if (!places) continue;
+    const offers = OZON_SET_ORDER.filter((place) => places[place]).map((place) => {
+      const offer = places[place];
+      const vlt = Object.entries(offer.vlt ?? {})
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([value, id]) => `${value}: ${id}`);
+      return `${place}: { id: ${offer.id}${vlt.length ? `, vlt: { ${vlt.join(', ')} }` : ''} }`;
+    });
+    if (offers.length) groups.push(`${kind}: { ${offers.join(', ')} }`);
+  }
+  return groups.length ? `ozon: { ${groups.join(', ')} }` : '';
+}
+
+let out = `// ВНИМАНИЕ: файл сгенерирован из выгрузок Wildberries (import/wb-api.json)
+// и Ozon (import/ozon-api.json).
 // Пересобрать: node scripts/build-cars.mjs
 // Правки вручную лучше вносить в scripts/build-cars.mjs (словарь марок и правила разбора).
 
-import type { FilmId } from './films';
+import type { FilmId, SetId } from './films';
+
+/** Прямая ссылка на товар Ozon: базовый SKU и варианты по светопропусканию. */
+export interface OzonOffer {
+  /** SKU товара Ozon. */
+  id: number;
+  /** Светопропускание, % → SKU конкретного варианта. */
+  vlt?: Record<number, number>;
+}
 
 export interface CarModel {
   slug: string;
@@ -424,6 +502,8 @@ export interface CarModel {
   aliases?: string[];
   /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
   wb?: Partial<Record<FilmId, number>>;
+  /** Товары Ozon: тип плёнки → комплект → SKU. */
+  ozon?: Partial<Record<FilmId, Partial<Record<SetId | 'windshield', OzonOffer>>>>;
 }
 
 export interface CarBrand {
@@ -455,6 +535,8 @@ for (const brand of brandList) {
     if (al.length && al.length <= 4) parts.push(`aliases: [${al.map((a) => `'${esc(a)}'`).join(', ')}]`);
     const wb = FILM_ORDER.filter((kind) => m.wb[kind]).map((kind) => `${kind}: ${m.wb[kind].id}`);
     if (wb.length) parts.push(`wb: { ${wb.join(', ')} }`);
+    const ozon = ozonLiteral(m);
+    if (ozon) parts.push(ozon);
     out += `      { ${parts.join(', ')} },\n`;
   }
   out += `    ],\n  },\n`;
@@ -496,3 +578,15 @@ fs.writeFileSync('src/data/cars.ts', out, 'utf8');
 console.log('марок:', brandList.length, '| моделей:', entries.size, '| пропущено:', skipped.length);
 console.log('популярные:', [...popular].join(', '));
 fs.writeFileSync('import/skipped.txt', skipped.join('\n'), 'utf8');
+
+const ozonProducts = ozonData.products ?? [];
+const ozonModels = [...entries.values()].filter((e) => Object.keys(e.ozon).length).length;
+console.log(
+  'Ozon: товаров в выгрузке',
+  ozonProducts.length,
+  '| моделей со ссылками',
+  ozonModels,
+  '| пропущено',
+  ozonSkipped.length,
+);
+fs.writeFileSync('import/skipped-ozon.txt', ozonSkipped.join('\n'), 'utf8');

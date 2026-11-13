@@ -41,6 +41,16 @@ const hasWindshield = brand.slug === 'lada';
 // Типы плёнки, которые реально есть на Wildberries — по ним и ведём на товар.
 const wbFilms = new Set(films.filter((film) => model.wb?.[film.id]).map((film) => film.id));
 
+// Типы плёнки, для которых на Ozon есть хотя бы один комплект.
+const ozonFilms = new Set(
+  films
+    .filter((film) => {
+      const offers = model.ozon?.[film.id];
+      return Boolean(offers && Object.keys(offers).length);
+    })
+    .map((film) => film.id),
+);
+
 // Прямая ссылка на товар WB, если он есть в выгрузке; иначе — на магазин.
 const wbUrl = (id?: number) =>
   id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : site.marketplaces.wildberries;
@@ -103,6 +113,8 @@ const payload = {
   telegram: site.telegram,
   wb: model.wb ?? {},
   wbShop: site.marketplaces.wildberries,
+  ozon: model.ozon ?? {},
+  ozonShop: site.marketplaces.ozon,
 };
 ---
 <BaseLayout
@@ -160,6 +172,7 @@ const payload = {
                       <span class="opt__meta">{film.short}</span>
                       <span class="opt__price">от {formatPrice(film.basePrice)}</span>
                       {!wbFilms.has(film.id) && <span class="opt__tag">на WB нет</span>}
+                      {!ozonFilms.has(film.id) && <span class="opt__tag">на Ozon нет</span>}
                     </span>
                   </label>
                 ))
@@ -257,6 +270,10 @@ const payload = {
             Этой плёнки нет на Wildberries — оформим заказ в Telegram, отправим напрямую.
           </p>
 
+          <p class="summary__note" data-ozon-note hidden>
+            Этого комплекта нет на Ozon — оформим заказ в Telegram, отправим напрямую.
+          </p>
+
           <p class="summary__note">
             В комплекте: вырезанные полотна, ракель и инструкция. На маркетплейсе выберите
             ту же модель и комплект.
@@ -317,6 +334,10 @@ const payload = {
     name: string;
     price: number;
   }
+  interface OzonOffer {
+    id: number;
+    vlt?: Record<string, number>;
+  }
   interface ConfigData {
     modelLabel: string;
     films: FilmData[];
@@ -326,6 +347,9 @@ const payload = {
     /** Артикулы Wildberries: тип плёнки → id товара. */
     wb: Record<string, number>;
     wbShop: string;
+    /** Товары Ozon: тип плёнки → комплект → SKU и варианты по светопропусканию. */
+    ozon: Record<string, Partial<Record<'front' | 'rear' | 'full' | 'windshield', OzonOffer>>>;
+    ozonShop: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-configurator]');
@@ -340,6 +364,8 @@ const payload = {
   const telegramButtons = root.querySelectorAll<HTMLAnchorElement>('a[href*="t.me"]');
   const wbButton = root.querySelector<HTMLAnchorElement>('a[href*="wildberries.ru"]');
   const wbNote = root.querySelector<HTMLElement>('[data-wb-note]');
+  const ozonButton = root.querySelector<HTMLAnchorElement>('a[href*="ozon.ru"]');
+  const ozonNote = root.querySelector<HTMLElement>('[data-ozon-note]');
 
   const checkedValue = (name: string) =>
     root.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
@@ -378,6 +404,16 @@ const payload = {
       wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbShop;
     }
     if (wbNote) wbNote.hidden = Boolean(id);
+
+    // Ozon: конкретный комплект выбранной плёнки + вариант по светопропусканию.
+    const place = (windshield ? 'windshield' : set!.id) as 'front' | 'rear' | 'full' | 'windshield';
+    const offer = data.ozon[film.id]?.[place];
+    const ozonId = offer?.vlt?.[String(vlt)] ?? offer?.id;
+    if (ozonButton) {
+      ozonButton.style.display = offer ? '' : 'none';
+      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : data.ozonShop;
+    }
+    if (ozonNote) ozonNote.hidden = Boolean(offer);
   }
 
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {

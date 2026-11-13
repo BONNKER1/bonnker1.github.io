@@ -1,8 +1,17 @@
-// ВНИМАНИЕ: файл сгенерирован из выгрузки Wildberries (import/wb-api.json).
+// ВНИМАНИЕ: файл сгенерирован из выгрузок Wildberries (import/wb-api.json)
+// и Ozon (import/ozon-api.json).
 // Пересобрать: node scripts/build-cars.mjs
 // Правки вручную лучше вносить в scripts/build-cars.mjs (словарь марок и правила разбора).
 
-import type { FilmId } from './films';
+import type { FilmId, SetId } from './films';
+
+/** Прямая ссылка на товар Ozon: базовый SKU и варианты по светопропусканию. */
+export interface OzonOffer {
+  /** SKU товара Ozon. */
+  id: number;
+  /** Светопропускание, % → SKU конкретного варианта. */
+  vlt?: Record<number, number>;
+}
 
 export interface CarModel {
   slug: string;
@@ -14,6 +23,8 @@ export interface CarModel {
   aliases?: string[];
   /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
   wb?: Partial<Record<FilmId, number>>;
+  /** Товары Ozon: тип плёнки → комплект → SKU. */
+  ozon?: Partial<Record<FilmId, Partial<Record<SetId | 'windshield', OzonOffer>>>>;
 }
 
 export interface CarBrand {
@@ -144,13 +155,13 @@ export const brands: CarBrand[] = [
     aliases: ['лада', 'ваз'],
     models: [
       { slug: 'granta', name: 'Гранта', popular: true, wb: { silicone: 62320207 } },
-      { slug: '2108-2113', name: '2108 2113', wb: { silicone: 62317953, classic: 443846687 } },
-      { slug: '2109-2114-2115', name: '2109 2114 2115', popular: true, wb: { silicone: 62318707, athermal: 444078728 } },
+      { slug: '2108-2113', name: '2108 2113', wb: { silicone: 62317953, classic: 443846687 }, ozon: { silicone: { full: { id: 802990536, vlt: { 5: 802990536 } } } } },
+      { slug: '2109-2114-2115', name: '2109 2114 2115', popular: true, wb: { silicone: 62318707, athermal: 444078728 }, ozon: { silicone: { full: { id: 5771623232, vlt: { 5: 5771624276, 15: 5771623232, 35: 5771625072, 50: 5771625191 } } } } },
       { slug: '2110-2111-2112', name: '2110 2111 2112', aliases: ['приора'], wb: { silicone: 61820890, athermal: 444263767 } },
       { slug: '2101-2106', name: '2101 2106', wb: { silicone: 62204342, classic: 444078700 } },
-      { slug: '2105-2107', name: '2105 2107', popular: true, wb: { silicone: 62249029 } },
+      { slug: '2105-2107', name: '2105 2107', popular: true, wb: { silicone: 62249029 }, ozon: { silicone: { full: { id: 5771626046, vlt: { 5: 5771624655, 15: 5771622636, 35: 5771626046, 50: 5771625623 } } } } },
       { slug: 'vesta', name: 'Веста', popular: true, wb: { silicone: 62333674 } },
-      { slug: 'kalina', name: 'Калина', wb: { silicone: 62332870 } },
+      { slug: 'kalina', name: 'Калина', wb: { silicone: 62332870 }, ozon: { silicone: { full: { id: 801444493, vlt: { 15: 801444493 } }, windshield: { id: 5771882454, vlt: { 5: 5771878515, 15: 5771882749, 35: 5771882454, 50: 5771881139 } } } } },
       { slug: 'niva-trevel', name: 'Нива Тревел', wb: { silicone: 501352589, hard: 896024431 } },
       { slug: 'oka', name: 'ОКА', wb: { silicone: 62342643 } },
       { slug: '2121', name: '2121', aliases: ['нива'], wb: { silicone: 288062728 } },
@@ -207,7 +218,7 @@ export const brands: CarBrand[] = [
       { slug: 'micra-march', name: 'Micra March', aliases: ['микра', 'марч'], wb: { silicone: 135966232 } },
       { slug: 'murano', name: 'Murano', years: '2008–2016', aliases: ['мурано'], wb: { silicone: 135967717 } },
       { slug: 'note', name: 'Note', years: '2012–2020', aliases: ['ноут'], wb: { silicone: 135970389 } },
-      { slug: 'pathfinder', name: 'Pathfinder', aliases: ['патфайндер'], wb: { silicone: 135974447 } },
+      { slug: 'pathfinder', name: 'Pathfinder', years: '2004–2014', aliases: ['патфайндер'], wb: { silicone: 135974447 }, ozon: { silicone: { full: { id: 845736739, vlt: { 5: 845736737, 15: 845736739 } } } } },
       { slug: 'qashqai', name: 'Qashqai', years: '2013–н.в.', aliases: ['кашкай'], wb: { silicone: 136731077 } },
       { slug: 'x-trail', name: 'X-Trail', years: '2001–2007', aliases: ['х-трейл'], wb: { silicone: 136732444 } },
     ],
@@ -218,7 +229,7 @@ export const brands: CarBrand[] = [
     models: [
       { slug: 'golf-4', name: 'Golf 4', aliases: ['гольф'], wb: { silicone: 64614119 } },
       { slug: 'golf-7', name: 'Golf 7', aliases: ['гольф'], wb: { silicone: 64983926 } },
-      { slug: 'polo', name: 'Polo', popular: true, aliases: ['поло'], wb: { silicone: 190901537 } },
+      { slug: 'polo', name: 'Polo', popular: true, aliases: ['поло'], wb: { silicone: 190901537 }, ozon: { silicone: { full: { id: 1731479342, vlt: { 5: 1731479398, 15: 1731479342 } } } } },
       { slug: 'tiguan', name: 'Tiguan', aliases: ['тигуан'], wb: { silicone: 191376095 } },
       { slug: 'amarok', name: 'Amarok', aliases: ['амарок'], wb: { silicone: 627872122 } },
       { slug: 'arteon', name: 'Arteon', aliases: ['артеон'], wb: { silicone: 627879896 } },
@@ -227,7 +238,7 @@ export const brands: CarBrand[] = [
       { slug: 'golf-6', name: 'Golf 6', aliases: ['гольф'], wb: { silicone: 627940751 } },
       { slug: 'golf-plus', name: 'Golf Plus', aliases: ['гольф'], wb: { silicone: 627949723 } },
       { slug: 'jetta', name: 'Jetta', aliases: ['джетта'], wb: { silicone: 190882796 } },
-      { slug: 'passat', name: 'Passat', aliases: ['пассат'], wb: { silicone: 190889197 } },
+      { slug: 'passat', name: 'Passat', aliases: ['пассат'], wb: { silicone: 190889197 }, ozon: { silicone: { full: { id: 1731208267, vlt: { 5: 1731208267, 15: 1731209379 } } } } },
     ],
   },
   {
@@ -306,7 +317,7 @@ export const brands: CarBrand[] = [
     name: 'Opel',
     models: [
       { slug: 'astra', name: 'Astra', aliases: ['астра'], wb: { silicone: 223536796 } },
-      { slug: 'vectra', name: 'Vectra', aliases: ['вектра'], wb: { silicone: 225905784 } },
+      { slug: 'vectra', name: 'Vectra', aliases: ['вектра'], wb: { silicone: 225905784 }, ozon: { silicone: { full: { id: 1746671546, vlt: { 5: 1746671532, 15: 1746671546 } } } } },
       { slug: 'corsa', name: 'Corsa', aliases: ['корса'], wb: { silicone: 223540337 } },
       { slug: 'insignia', name: 'Insignia', aliases: ['инсигния'], wb: { silicone: 225415831 } },
       { slug: 'mokka', name: 'Mokka', aliases: ['мокка'], wb: { silicone: 225416962 } },
@@ -371,7 +382,7 @@ export const brands: CarBrand[] = [
     slug: 'mitsubishi',
     name: 'Mitsubishi',
     models: [
-      { slug: 'diamante', name: 'Diamante', aliases: ['диамант'], wb: { silicone: 198275869 } },
+      { slug: 'diamante', name: 'Diamante', aliases: ['диамант'], wb: { silicone: 198275869 }, ozon: { silicone: { full: { id: 1757595604, vlt: { 5: 1757595586, 15: 1757595604 } } } } },
       { slug: 'lancer', name: 'Lancer', aliases: ['лансер'], wb: { silicone: 198279304 } },
       { slug: 'pajero', name: 'Pajero', aliases: ['паджеро'], wb: { silicone: 198283367 } },
       { slug: 'pajero-pinin', name: 'Pajero Pinin', aliases: ['паджеро'], wb: { silicone: 198282271 } },
@@ -391,7 +402,7 @@ export const brands: CarBrand[] = [
     slug: 'skoda',
     name: 'Skoda',
     models: [
-      { slug: 'rapid', name: 'Rapid', aliases: ['рапид'], wb: { silicone: 194554000 } },
+      { slug: 'rapid', name: 'Rapid', aliases: ['рапид'], wb: { silicone: 194554000 }, ozon: { silicone: { full: { id: 1748750946, vlt: { 5: 1748752565, 15: 1748750946 } } } } },
       { slug: 'octavia', name: 'Octavia', aliases: ['октавия'], wb: { silicone: 194553200 } },
       { slug: 'superb', name: 'Superb', years: '2002–2008', aliases: ['суперб'], wb: { silicone: 194555531 } },
       { slug: 'kodiaq', name: 'Kodiaq', years: '2016–2020', aliases: ['кодиак'], wb: { silicone: 194550682 } },
