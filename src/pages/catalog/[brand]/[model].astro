@@ -17,6 +17,7 @@ import {
   modelOzonLink,
   modelWbLink,
   ozonSearchUrl,
+  searchLabel,
   searchQuery,
   wbSearchUrl,
 } from '../../../lib/marketplaces';
@@ -48,6 +49,7 @@ const hasWindshield = brand.slug === 'lada';
 
 const autoLabel = modelLabel(brand, model);
 const marketplaceQuery = searchQuery(brand, model);
+const windshieldQuery = `тонировка лобовое стекло ${searchLabel(brand, model)}`;
 
 // Прямая карточка, если она есть в выгрузке; иначе — поиск по магазину.
 const wbLink = modelWbLink(brand, model);
@@ -111,8 +113,10 @@ const payload = {
   telegram: site.telegram,
   wb: model.wb ?? {},
   wbFallback: wbSearchUrl(marketplaceQuery),
+  wbWindshieldFallback: wbSearchUrl(windshieldQuery),
   ozon: model.ozon ?? {},
   ozonFallback: ozonSearchUrl(marketplaceQuery),
+  ozonWindshieldFallback: ozonSearchUrl(windshieldQuery),
 };
 ---
 <BaseLayout
@@ -346,11 +350,13 @@ const payload = {
     telegram: string;
     /** Артикулы Wildberries: тип плёнки → id товара. */
     wb: Record<string, number>;
-    /** Поиск по магазину, если точного артикула нет. */
+    /** Поиск на маркетплейсе, если точного артикула нет. */
     wbFallback: string;
+    wbWindshieldFallback: string;
     /** Товары Ozon: тип плёнки → комплект → SKU и варианты по светопропусканию. */
     ozon: Record<string, Partial<Record<'front' | 'rear' | 'full' | 'windshield', OzonOffer>>>;
     ozonFallback: string;
+    ozonWindshieldFallback: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-configurator]');
@@ -397,12 +403,14 @@ const payload = {
       button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
     });
 
-    // Ведём на карточку именно той плёнки, что выбрана. Если её нет в выгрузке —
-    // отправляем в поиск по магазину, а не скрываем кнопку.
-    const id = data.wb[film.id];
+    // Ведём на карточку именно той плёнки, что выбрана. Лобовое стекло — отдельный
+    // комплект: берём его собственный артикул, а не боковой тонировки.
+    // Если артикула нет — отправляем в поиск, а не скрываем кнопку.
+    const id = windshield ? data.wb.windshield : data.wb[film.id];
+    const wbSearch = windshield ? data.wbWindshieldFallback : data.wbFallback;
     if (wbButton) {
       wbButton.style.display = '';
-      wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbFallback;
+      wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : wbSearch;
       wbButton.textContent = id ? 'Купить на Wildberries' : 'Найти на Wildberries';
     }
     if (wbNote) {
@@ -417,9 +425,10 @@ const payload = {
     const place = (windshield ? 'windshield' : set!.id) as 'front' | 'rear' | 'full' | 'windshield';
     const offer = data.ozon[film.id]?.[place];
     const ozonId = offer?.vlt?.[String(vlt)] ?? offer?.id;
+    const ozonSearch = windshield ? data.ozonWindshieldFallback : data.ozonFallback;
     if (ozonButton) {
       ozonButton.style.display = '';
-      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : data.ozonFallback;
+      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : ozonSearch;
       ozonButton.textContent = offer ? 'Купить на Ozon' : 'Найти на Ozon';
     }
     if (ozonNote) {

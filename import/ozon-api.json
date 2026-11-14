@@ -1,190 +1,7 @@
 {
   "seller": "https://www.ozon.ru/seller/boonker-semnaya-tonirovka/",
-  "importedAt": "2026-11-13T14:48:27.738Z",
+  "importedAt": "2026-11-14T17:55:52.659Z",
   "products": [
-    {
-      "id": "5771881498",
-      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Приора",
-      "url": "https://www.ozon.ru/product/5771881498/",
-      "film": "silicone",
-      "place": "windshield",
-      "placeText": "Лобовое стекло",
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "5771881730",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881730/",
-          "price": 1402
-        },
-        "15": {
-          "id": "5771881877",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881877/",
-          "price": 1395
-        },
-        "35": {
-          "id": "5771881498",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881498/",
-          "price": 1342
-        },
-        "50": {
-          "id": "5771880908",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771880908/",
-          "price": 1395
-        }
-      }
-    },
-    {
-      "id": "1746671546",
-      "name": "Съёмная тонировка Opel Vectra Опель Вектра",
-      "url": "https://www.ozon.ru/product/1746671546/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1746671532",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-opel-vectra-opel-vektra-1746671532/",
-          "price": 1175
-        },
-        "15": {
-          "id": "1746671546",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-opel-vectra-opel-vektra-1746671546/",
-          "price": 1175
-        }
-      }
-    },
-    {
-      "id": "1772687080",
-      "name": "Съёмная тонировка Deewoo Matiz Дэу Матиз",
-      "url": "https://www.ozon.ru/product/1772687080/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1772687082",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-deewoo-matiz-deu-matiz-1772687082/",
-          "price": 1222
-        },
-        "15": {
-          "id": "1772687080",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-deewoo-matiz-deu-matiz-1772687080/",
-          "price": 1176
-        }
-      }
-    },
-    {
-      "id": "1759768835",
-      "name": "Съёмная тонировка Mercedes GLK Мерседес GLК",
-      "url": "https://www.ozon.ru/product/1759768835/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1759768910",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-mercedes-glk-mersedes-glk-1759768910/",
-          "price": 1175
-        },
-        "15": {
-          "id": "1759768835",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-mercedes-glk-mersedes-glk-1759768835/",
-          "price": 981
-        }
-      }
-    },
-    {
-      "id": "1731208267",
-      "name": "Съёмная тонировка Volkswagen Passat Фольксваген Пассат",
-      "url": "https://www.ozon.ru/product/1731208267/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1731208267",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731208267/",
-          "price": 1099
-        },
-        "15": {
-          "id": "1731209379",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731209379/",
-          "price": 1175
-        }
-      }
-    },
-    {
-      "id": "802990536",
-      "name": "Съёмная многоразовая силиконовая тонировка ВАЗ ЛАДА 2108 2113",
-      "url": "https://www.ozon.ru/product/802990536/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "802990536",
-          "url": "https://www.ozon.ru/product/802990536/",
-          "price": null
-        }
-      }
-    },
-    {
-      "id": "5771881877",
-      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Приора",
-      "url": "https://www.ozon.ru/product/5771881877/",
-      "film": "silicone",
-      "place": "windshield",
-      "placeText": "Лобовое стекло",
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "5771881730",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881730/",
-          "price": 1402
-        },
-        "15": {
-          "id": "5771881877",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881877/",
-          "price": 1395
-        },
-        "35": {
-          "id": "5771881498",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881498/",
-          "price": 1342
-        },
-        "50": {
-          "id": "5771880908",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771880908/",
-          "price": 1395
-        }
-      }
-    },
-    {
-      "id": "1748750946",
-      "name": "Съёмная тонировка Skoda Rapid Шкода Рапид",
-      "url": "https://www.ozon.ru/product/1748750946/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1748752565",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-rapid-shkoda-rapid-1748752565/",
-          "price": 1175
-        },
-        "15": {
-          "id": "1748750946",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-rapid-shkoda-rapid-1748750946/",
-          "price": 1099
-        }
-      }
-    },
     {
       "id": "279073839",
       "name": "Силиконовая смазка универсальная для автомобиля KERRY, аэрозоль, 520 мл",
@@ -207,22 +24,22 @@
         "5": {
           "id": "5771624276",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2109-2114-2115-5771624276/",
-          "price": 1642
+          "price": 1706
         },
         "15": {
           "id": "5771623232",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2109-2114-2115-5771623232/",
-          "price": 1308
+          "price": 1071
         },
         "35": {
           "id": "5771625072",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2109-2114-2115-5771625072/",
-          "price": 1290
+          "price": 1332
         },
         "50": {
           "id": "5771625191",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2109-2114-2115-5771625191/",
-          "price": 1395
+          "price": 1449
         }
       }
     },
@@ -238,137 +55,80 @@
         "5": {
           "id": "1757595586",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-mitsubishi-diamante-mitsubisi-diamant-1757595586/",
-          "price": 1222
+          "price": 1219
         },
         "15": {
           "id": "1757595604",
           "url": "https://www.ozon.ru/product/semnaya-tonirovka-mitsubishi-diamante-mitsubisi-diamant-1757595604/",
-          "price": 1175
+          "price": 1173
         }
       }
     },
     {
-      "id": "1731479342",
-      "name": "Съёмная тонировка Volkswagen Polo Фольксваген Поло",
-      "url": "https://www.ozon.ru/product/1731479342/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "1731479398",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-polo-folksvagen-polo-1731479398/",
-          "price": 1223
-        },
-        "15": {
-          "id": "1731479342",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-polo-folksvagen-polo-1731479342/",
-          "price": 1155
-        }
-      }
-    },
-    {
-      "id": "5771882454",
-      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Калина",
-      "url": "https://www.ozon.ru/product/5771882454/",
+      "id": "5771881877",
+      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Приора",
+      "url": "https://www.ozon.ru/product/5771881877/",
       "film": "silicone",
       "place": "windshield",
       "placeText": "Лобовое стекло",
       "material": "Силикон",
       "vlt": {
         "5": {
-          "id": "5771878515",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771878515/",
-          "price": 1642
+          "id": "5771881730",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881730/",
+          "price": 1457
         },
         "15": {
-          "id": "5771882749",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882749/",
-          "price": 1395
+          "id": "5771881877",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881877/",
+          "price": 1449
         },
         "35": {
-          "id": "5771882454",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882454/",
-          "price": 1162
+          "id": "5771881498",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771881498/",
+          "price": 1449
         },
         "50": {
-          "id": "5771881139",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771881139/",
-          "price": 1395
+          "id": "5771880908",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-priora-5771880908/",
+          "price": 1449
         }
       }
     },
     {
-      "id": "921908397",
-      "name": "Съёмная многоразовая силиконовая тонировка Subaru Outback Субару Аутбэк 2003-2009",
-      "url": "https://www.ozon.ru/product/921908397/",
+      "id": "802990536",
+      "name": "Съёмная многоразовая силиконовая тонировка ВАЗ ЛАДА 2108 2113",
+      "url": "https://www.ozon.ru/product/802990536/",
       "film": "silicone",
       "place": null,
       "placeText": null,
       "material": "Силикон",
       "vlt": {
         "5": {
-          "id": "921908397",
-          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-subaru-outback-subaru-autbek-2003-2009-921908397/",
-          "price": 1175
-        },
-        "15": {
-          "id": "921910121",
-          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-subaru-outback-subaru-autbek-2003-2009-921910121/",
-          "price": 1236
+          "id": "802990536",
+          "url": "https://www.ozon.ru/product/802990536/",
+          "price": null
         }
       }
     },
     {
-      "id": "845736739",
-      "name": "Съёмная многоразовая силиконовая тонировка Nissan Pathfinder Ниссан Патфайндер 2004-2014",
-      "url": "https://www.ozon.ru/product/845736739/",
+      "id": "1748764765",
+      "name": "Съёмная тонировка Skoda Superb Шкода Суперб",
+      "url": "https://www.ozon.ru/product/1748764765/",
       "film": "silicone",
       "place": null,
       "placeText": null,
       "material": "Силикон",
       "vlt": {
         "5": {
-          "id": "845736737",
-          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-nissan-pathfinder-nissan-patfaynder-2004-2014-845736737/",
-          "price": 1175
+          "id": "1748796004",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-superb-shkoda-superb-1748796004/",
+          "price": 1173
         },
         "15": {
-          "id": "845736739",
-          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-nissan-pathfinder-nissan-patfaynder-2004-2014-845736739/",
-          "price": 1175
-        }
-      }
-    },
-    {
-      "id": "5771626046",
-      "name": "Съёмная тонировка на лобовое стекло Ваз Лада 2105 2107",
-      "url": "https://www.ozon.ru/product/5771626046/",
-      "film": "silicone",
-      "place": null,
-      "placeText": null,
-      "material": "Силикон",
-      "vlt": {
-        "5": {
-          "id": "5771624655",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771624655/",
-          "price": 1395
-        },
-        "15": {
-          "id": "5771622636",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771622636/",
-          "price": 1395
-        },
-        "35": {
-          "id": "5771626046",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771626046/",
-          "price": 1290
-        },
-        "50": {
-          "id": "5771625623",
-          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771625623/",
-          "price": 1642
+          "id": "1748764765",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-superb-shkoda-superb-1748764765/",
+          "price": 957
         }
       }
     },
@@ -385,6 +145,246 @@
           "id": "801444493",
           "url": "https://www.ozon.ru/product/801444493/",
           "price": null
+        }
+      }
+    },
+    {
+      "id": "1731209379",
+      "name": "Съёмная тонировка Volkswagen Passat Фольксваген Пассат",
+      "url": "https://www.ozon.ru/product/1731209379/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1731208267",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731208267/",
+          "price": 1173
+        },
+        "15": {
+          "id": "1731209379",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731209379/",
+          "price": 1173
+        }
+      }
+    },
+    {
+      "id": "5771626046",
+      "name": "Съёмная тонировка на лобовое стекло Ваз Лада 2105 2107",
+      "url": "https://www.ozon.ru/product/5771626046/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "5771624655",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771624655/",
+          "price": 1449
+        },
+        "15": {
+          "id": "5771622636",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771622636/",
+          "price": 1449
+        },
+        "35": {
+          "id": "5771626046",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771626046/",
+          "price": 1332
+        },
+        "50": {
+          "id": "5771625623",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-2105-2107-5771625623/",
+          "price": 1706
+        }
+      }
+    },
+    {
+      "id": "1772687080",
+      "name": "Съёмная тонировка Deewoo Matiz Дэу Матиз",
+      "url": "https://www.ozon.ru/product/1772687080/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1772687082",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-deewoo-matiz-deu-matiz-1772687082/",
+          "price": 1219
+        },
+        "15": {
+          "id": "1772687080",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-deewoo-matiz-deu-matiz-1772687080/",
+          "price": 1173
+        }
+      }
+    },
+    {
+      "id": "1731208267",
+      "name": "Съёмная тонировка Volkswagen Passat Фольксваген Пассат",
+      "url": "https://www.ozon.ru/product/1731208267/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1731208267",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731208267/",
+          "price": 1173
+        },
+        "15": {
+          "id": "1731209379",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-volkswagen-passat-folksvagen-passat-1731209379/",
+          "price": 1173
+        }
+      }
+    },
+    {
+      "id": "5771882749",
+      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Калина",
+      "url": "https://www.ozon.ru/product/5771882749/",
+      "film": "silicone",
+      "place": "windshield",
+      "placeText": "Лобовое стекло",
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "5771878515",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771878515/",
+          "price": 1706
+        },
+        "15": {
+          "id": "5771882749",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882749/",
+          "price": 1449
+        },
+        "35": {
+          "id": "5771882454",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882454/",
+          "price": 1198
+        },
+        "50": {
+          "id": "5771881139",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771881139/",
+          "price": 1449
+        }
+      }
+    },
+    {
+      "id": "5771882454",
+      "name": "Съёмная тонировка на лобовое стекло Ваз Лада Калина",
+      "url": "https://www.ozon.ru/product/5771882454/",
+      "film": "silicone",
+      "place": "windshield",
+      "placeText": "Лобовое стекло",
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "5771878515",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771878515/",
+          "price": 1706
+        },
+        "15": {
+          "id": "5771882749",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882749/",
+          "price": 1449
+        },
+        "35": {
+          "id": "5771882454",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771882454/",
+          "price": 1198
+        },
+        "50": {
+          "id": "5771881139",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-na-lobovoe-steklo-vaz-lada-kalina-5771881139/",
+          "price": 1449
+        }
+      }
+    },
+    {
+      "id": "1757595586",
+      "name": "Съёмная тонировка Mitsubishi Diamante Мицубиси Диамант",
+      "url": "https://www.ozon.ru/product/1757595586/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1757595586",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-mitsubishi-diamante-mitsubisi-diamant-1757595586/",
+          "price": 1219
+        },
+        "15": {
+          "id": "1757595604",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-mitsubishi-diamante-mitsubisi-diamant-1757595604/",
+          "price": 1173
+        }
+      }
+    },
+    {
+      "id": "1740627797",
+      "name": "Съёмная тонировка Kia Spectra Киа Спектра",
+      "url": "https://www.ozon.ru/product/1740627797/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1740627797",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-kia-spectra-kia-spektra-1740627797/",
+          "price": 1218
+        },
+        "15": {
+          "id": "1740628480",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-kia-spectra-kia-spektra-1740628480/",
+          "price": 1173
+        }
+      }
+    },
+    {
+      "id": "1748736934",
+      "name": "Съемная тонировка Skoda Rapid Шкода Рапид",
+      "url": "https://www.ozon.ru/product/1748736934/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "1748736372",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-rapid-shkoda-rapid-1748736372/",
+          "price": 1218
+        },
+        "15": {
+          "id": "1748736934",
+          "url": "https://www.ozon.ru/product/semnaya-tonirovka-skoda-rapid-shkoda-rapid-1748736934/",
+          "price": 1218
+        }
+      }
+    },
+    {
+      "id": "841261636",
+      "name": "Съёмная многоразовая силиконовая тонировка Toyota Spacio  Тойота Спасио 1997-2001",
+      "url": "https://www.ozon.ru/product/841261636/",
+      "film": "silicone",
+      "place": null,
+      "placeText": null,
+      "material": "Силикон",
+      "vlt": {
+        "5": {
+          "id": "841261635",
+          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-toyota-spacio-toyota-spasio-1997-2001-841261635/",
+          "price": 1173
+        },
+        "15": {
+          "id": "841261636",
+          "url": "https://www.ozon.ru/product/semnaya-mnogorazovaya-silikonovaya-tonirovka-toyota-spacio-toyota-spasio-1997-2001-841261636/",
+          "price": 1097
         }
       }
     }

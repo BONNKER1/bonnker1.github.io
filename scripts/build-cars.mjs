@@ -447,7 +447,8 @@ for (const product of data) {
   }
 
   // Артикул WB для типа плёнки: из нескольких карточек берём самую обзвоненную.
-  const kind = filmKind(name);
+  // Лобовое стекло — отдельный комплект, его не мешаем с боковыми стёклами.
+  const kind = /лобов/i.test(name) ? 'windshield' : filmKind(name);
   const feedbacks = Number(product.feedbacks) || 0;
   const current = entry.wb[kind];
   if (!current || feedbacks > current.feedbacks) {
@@ -789,7 +790,7 @@ for (const [slug, , aliases] of ALL_MAKES) {
 }
 
 const esc = (s) => s.replace(/'/g, "\\'");
-const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard'];
+const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard', 'windshield'];
 const OZON_SET_ORDER = ['front', 'rear', 'full', 'windshield'];
 
 /** Литерал поля ozon для сгенерированного файла. */
@@ -834,7 +835,7 @@ export interface CarModel {
   /** Русские названия и частые варианты написания для поиска. */
   aliases?: string[];
   /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
-  wb?: Partial<Record<FilmId, number>>;
+  wb?: Partial<Record<FilmId | 'windshield', number>>;
   /** Товары Ozon: тип плёнки → комплект → SKU. */
   ozon?: Partial<Record<FilmId, Partial<Record<SetId | 'windshield', OzonOffer>>>>;
 }
