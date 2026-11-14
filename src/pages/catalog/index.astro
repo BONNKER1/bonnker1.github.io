@@ -2,25 +2,33 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import ProductCard from '../../components/ProductCard.astro';
-import { brands, totalModels } from '../../data/cars';
+import { brands, popularModels, totalModels } from '../../data/cars';
 import { breadcrumbsSchema, canonicalUrl } from '../../lib/schema';
 
-const allModels = brands.flatMap((brand) => brand.models.map((model) => ({ brand, model })));
-const sortedModels = [...allModels].sort((a, b) => {
-  const popular = Number(Boolean(b.model.popular)) - Number(Boolean(a.model.popular));
-  return popular || a.brand.name.localeCompare(b.brand.name, 'ru');
+const brandCards = [...brands].sort((a, b) => {
+  if (a.slug === 'lada') return -1;
+  if (b.slug === 'lada') return 1;
+  return a.name.localeCompare(b.name, 'ru');
 });
+
+const modelsWord = (count: number) => {
+  const tail10 = count % 10;
+  const tail100 = count % 100;
+  if (tail10 === 1 && tail100 !== 11) return 'модель';
+  if (tail10 >= 2 && tail10 <= 4 && (tail100 < 12 || tail100 > 14)) return 'модели';
+  return 'моделей';
+};
 
 const itemListSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
-  name: 'Каталог тонировки по маркам и моделям',
-  numberOfItems: sortedModels.length,
-  itemListElement: sortedModels.map(({ brand, model }, index) => ({
+  name: 'Марки автомобилей в каталоге тонировки по лекалам',
+  numberOfItems: brandCards.length,
+  itemListElement: brandCards.map((brand, index) => ({
     '@type': 'ListItem',
     position: index + 1,
-    name: `${brand.name} ${model.name}`,
-    url: canonicalUrl(`/catalog/${brand.slug}/${model.slug}/`),
+    name: `Тонировка ${brand.name} по лекалам`,
+    url: canonicalUrl(`/catalog/${brand.slug}/`),
   })),
 };
 
@@ -32,9 +40,10 @@ const schemas = [
   itemListSchema,
 ];
 ---
+
 <BaseLayout
   title="Каталог тонировки по лекалам"
-  description={`Лекала для ${totalModels} моделей автомобилей: передние и задние полусферы, полный комплект. Силиконовая, классическая, атермальная и жёсткая Premium плёнка.`}
+  description={`Лекала для ${totalModels} моделей автомобилей ${brandCards.length} марок: передние и задние полусферы, полный комплект. Силиконовая, классическая, атермальная и жёсткая Premium плёнка.`}
   schemas={schemas}
 >
   <div class="container">
@@ -46,26 +55,19 @@ const schemas = [
       <p class="eyebrow">Каталог</p>
       <h1>Тонировка по лекалам — выберите авто</h1>
       <p class="lead">
-        В базе {totalModels} моделей: от ВАЗ и Toyota до BMW и Land Rover. Найдите свою марку и
-        модель — покажем доступные комплекты и цены.
+        {totalModels} моделей {brandCards.length} марок: от ВАЗ и Toyota до BMW, Land Rover и
+        китайских новинок. Начните вводить марку или модель — покажем подходящие лекала с годами
+        выпуска.
       </p>
 
-      <div class="filters">
-        <div class="field">
-          <label for="filter-brand">Марка</label>
-          <select id="filter-brand" data-brand-filter>
-            <option value="">Все марки</option>
-            {brands.map((brand) => <option value={brand.slug}>{brand.name}</option>)}
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="filter-search">Поиск</label>
+      <div class="catalog-search">
+        <div class="field catalog-search__field">
+          <label for="catalog-search">Марка или модель</label>
           <input
-            id="filter-search"
+            id="catalog-search"
             type="search"
             data-search
-            placeholder="Модель или марка"
+            placeholder="Например: Camry, Солярис, 2109, Land Cruiser"
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -73,133 +75,241 @@ const schemas = [
             enterkeyhint="search"
           />
         </div>
+        <div class="catalog-search__suggest" data-suggest-list>
+          <span>Часто ищут:</span>
+          <button type="button" data-suggest="Camry">Camry</button>
+          <button type="button" data-suggest="Солярис">Солярис</button>
+          <button type="button" data-suggest="2109">2109</button>
+          <button type="button" data-suggest="Land Cruiser">Land Cruiser</button>
+        </div>
+      </div>
 
-        <p class="filters__count">
-          Показано <strong data-count>{sortedModels.length}</strong> из {sortedModels.length}
+      <div class="search-results" data-results hidden>
+        <p class="search-results__meta">
+          Найдено <strong data-results-count>0</strong>
+          <span data-results-note></span>
+        </p>
+        <ul class="search-results__list" data-results-list></ul>
+        <p class="search-results__empty" data-results-empty hidden>
+          Ничего не найдено. <a href="/kontakty/">Напишите нам</a> — проверим лекало по вашей марке
+          и году выпуска.
         </p>
       </div>
 
-      <div class="grid grid--4 catalog-grid" data-catalog-grid>
-        {sortedModels.map(({ brand, model }) => <ProductCard brand={brand} model={model} />)}
-      </div>
+      <div data-browse>
+        <section class="catalog-block">
+          <h2>Часто заказывают</h2>
+          <div class="grid grid--4">
+            {popularModels.map(({ brand, model }) => <ProductCard brand={brand} model={model} />)}
+          </div>
+        </section>
 
-      <p class="empty" data-empty hidden>
-        Ничего не найдено. Попробуйте другую марку или <a href="/kontakty/">напишите нам</a> —
-        проверим лекало.
-      </p>
+        <section class="catalog-block">
+          <div class="catalog-block__head">
+            <h2>Все марки</h2>
+            <span class="catalog-block__count">{brandCards.length}</span>
+          </div>
+          <div class="brands-grid">
+            {
+              brandCards.map((brand) => (
+                <a class="brand-tile" href={`/catalog/${brand.slug}/`}>
+                  <span class="brand-tile__name">{brand.name}</span>
+                  <span class="brand-tile__count">
+                    {brand.models.length} {modelsWord(brand.models.length)}
+                  </span>
+                </a>
+              ))
+            }
+          </div>
+        </section>
+      </div>
     </div>
   </section>
 </BaseLayout>
 
 <script>
-  const grid = document.querySelector<HTMLElement>('[data-catalog-grid]');
-  const cards = Array.from(document.querySelectorAll<HTMLElement>('.car-card'));
-  const brandFilter = document.querySelector<HTMLSelectElement>('[data-brand-filter]');
-  const search = document.querySelector<HTMLInputElement>('[data-search]');
-  const count = document.querySelector<HTMLElement>('[data-count]');
-  const empty = document.querySelector<HTMLElement>('[data-empty]');
+  import { fold, matchesQuery, tokenize } from '../../lib/search';
+
+  interface IndexData {
+    /** [slug, имя, строка для поиска] */
+    brands: [string, string, string][];
+    /** [индекс марки, slug, имя, годы, алиасы] */
+    models: [number, string, string, string, string][];
+  }
+
+  interface PreparedModel {
+    brandSlug: string;
+    brandName: string;
+    href: string;
+    name: string;
+    years: string;
+    text: string;
+    folded: string;
+    tokens: string[];
+  }
+
+  const base = import.meta.env.BASE_URL;
+
+  const input = document.querySelector<HTMLInputElement>('[data-search]');
+  const browse = document.querySelector<HTMLElement>('[data-browse]');
+  const results = document.querySelector<HTMLElement>('[data-results]');
+  const resultsList = document.querySelector<HTMLElement>('[data-results-list]');
+  const resultsCount = document.querySelector<HTMLElement>('[data-results-count]');
+  const resultsNote = document.querySelector<HTMLElement>('[data-results-note]');
+  const resultsEmpty = document.querySelector<HTMLElement>('[data-results-empty]');
+  const suggestButtons = document.querySelectorAll<HTMLButtonElement>('[data-suggest]');
+
+  const LIMIT = 80;
+
+  let indexPromise: Promise<PreparedModel[]> | null = null;
+
+  function loadIndex(): Promise<PreparedModel[]> {
+    if (!indexPromise) {
+      indexPromise = fetch(`${base}catalog-index.json`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json() as Promise<IndexData>;
+        })
+        .then((data) =>
+          data.models.map(([brandIndex, slug, name, years, aliases]) => {
+            const [brandSlug, brandName, brandSearch] = data.brands[brandIndex] ?? ['', '', ''];
+            const text = `${brandName} ${name} ${aliases}`.toLowerCase();
+            const searchable = `${brandSearch} ${name} ${aliases}`.toLowerCase();
+            return {
+              brandSlug,
+              brandName,
+              href: `${base}catalog/${brandSlug}/${slug}/`,
+              name,
+              years,
+              text,
+              folded: fold(searchable),
+              tokens: tokenize(searchable),
+            };
+          }),
+        );
+    }
+    return indexPromise;
+  }
+
+  function render(models: PreparedModel[]) {
+    if (!resultsList) return;
+
+    const fragment = document.createDocumentFragment();
+    models.forEach((model) => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = model.href;
+      link.className = 'result';
+
+      const brand = document.createElement('span');
+      brand.className = 'result__brand';
+      brand.textContent = model.brandName;
+
+      const name = document.createElement('span');
+      name.className = 'result__name';
+      name.textContent = model.name;
+
+      const years = document.createElement('span');
+      years.className = 'result__years';
+      years.textContent = model.years || 'годы уточним';
+
+      const arrow = document.createElement('span');
+      arrow.className = 'result__arrow';
+      arrow.textContent = '→';
+
+      link.append(brand, name, years, arrow);
+      item.append(link);
+      fragment.append(item);
+    });
+
+    resultsList.replaceChildren(fragment);
+  }
+
+  let timer: number | undefined;
+
+  async function applySearch() {
+    const query = input?.value.trim() ?? '';
+
+    if (!query) {
+      if (results) results.hidden = true;
+      if (browse) browse.hidden = false;
+      return;
+    }
+
+    if (results) results.hidden = false;
+    if (browse) browse.hidden = true;
+
+    try {
+      const models = await loadIndex();
+      const matched = models.filter((model) =>
+        matchesQuery(query, model.text, model.folded, model.tokens),
+      );
+
+      const needle = fold(query);
+      matched.sort((a, b) => {
+        const score = (model: PreparedModel) => {
+          const name = model.folded;
+          if (name === needle) return 0;
+          if (name.startsWith(needle)) return 1;
+          if (name.includes(needle)) return 2;
+          return 3;
+        };
+        return score(a) - score(b) || a.brandName.localeCompare(b.brandName, 'ru') || a.name.localeCompare(b.name, 'ru');
+      });
+
+      const visible = matched.slice(0, LIMIT);
+      render(visible);
+
+      if (resultsCount) resultsCount.textContent = String(matched.length);
+      if (resultsNote) {
+        resultsNote.textContent =
+          matched.length > LIMIT ? `Показаны первые ${LIMIT} — уточните запрос` : '';
+      }
+      if (resultsEmpty) resultsEmpty.hidden = matched.length !== 0;
+    } catch (error) {
+      if (resultsEmpty) {
+        resultsEmpty.hidden = false;
+        resultsEmpty.textContent = 'Не удалось загрузить поиск. Откройте список марок ниже.';
+      }
+      if (browse) browse.hidden = false;
+      console.error(error);
+    }
+  }
+
+  input?.addEventListener('input', () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(applySearch, 120);
+  });
+
+  suggestButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!input) return;
+      input.value = button.dataset.suggest ?? '';
+      input.focus();
+      applySearch();
+    });
+  });
 
   const params = new URLSearchParams(window.location.search);
   const paramBrand = params.get('brand');
   const paramModel = params.get('model');
-
-  if (paramBrand && brandFilter) brandFilter.value = paramBrand;
-
-  // Кириллица → латиница + фонетическое свёртывание, чтобы «камри» находило Camry,
-  // «солярис» — Solaris, «шкода» — Skoda.
-  const translitMap: Record<string, string> = {
-    а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
-    и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-    с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh',
-    щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
-  };
-
-  const fold = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/ё/g, 'е')
-      .replace(/дж/g, 'j')
-      .replace(/[а-я]/g, (char) => translitMap[char] ?? char)
-      .replace(/sch|sh/g, 's')
-      .replace(/c/g, 'k')
-      .replace(/y/g, 'i')
-      .replace(/w/g, 'v');
-
-  const tokenize = (value: string) =>
-    fold(value)
-      .split(/[^a-z0-9]+/)
-      .filter((token) => token.length > 0);
-
-  const editDistance = (a: string, b: string): number => {
-    const dp = Array.from({ length: b.length + 1 }, (_, index) => index);
-    for (let i = 1; i <= a.length; i += 1) {
-      let previous = dp[0];
-      dp[0] = i;
-      for (let j = 1; j <= b.length; j += 1) {
-        const current = dp[j];
-        dp[j] = Math.min(
-          dp[j] + 1,
-          dp[j - 1] + 1,
-          previous + (a[i - 1] === b[j - 1] ? 0 : 1),
-        );
-        previous = current;
-      }
+  if (paramBrand) {
+    window.location.replace(
+      paramModel
+        ? `${base}catalog/${paramBrand}/${paramModel}/`
+        : `${base}catalog/${paramBrand}/`,
+    );
+  } else {
+    const initial = params.get('q');
+    if (initial && input) {
+      input.value = initial;
+      applySearch();
     }
-    return dp[b.length];
-  };
-
-  const isClose = (needle: string, token: string): boolean => {
-    if (token === needle || token.startsWith(needle)) return true;
-    // Цифры (годы, индексы моделей) сравниваем только точно: 2107 ≠ 2109.
-    if (/^\d+$/.test(needle)) return false;
-    const allowed = needle.length >= 7 ? 2 : needle.length >= 4 ? 1 : 0;
-    return allowed > 0 && editDistance(needle, token) <= allowed;
-  };
-
-  const searchIndex = cards.map((card) => {
-    const text = `${card.textContent ?? ''} ${card.dataset.search ?? ''}`;
-    return {
-      card,
-      text: text.toLowerCase(),
-      latin: fold(text),
-      tokens: tokenize(text),
-    };
-  });
-
-  function applyFilter() {
-    const rawQuery = (search?.value ?? '').trim().toLowerCase();
-    const queryTokens = tokenize(rawQuery);
-    const brand = brandFilter?.value ?? '';
-    let visible = 0;
-
-    searchIndex.forEach(({ card, text, latin, tokens }) => {
-      const matchesBrand = !brand || card.dataset.brand === brand;
-      const matchesQuery =
-        !rawQuery ||
-        text.includes(rawQuery) ||
-        (queryTokens.length > 0 && queryTokens.every((needle) => isClose(needle, latin) || tokens.some((token) => isClose(needle, token))));
-      const matchesModel = !paramModel || card.dataset.model === paramModel;
-      const show = matchesBrand && matchesQuery && matchesModel;
-      card.hidden = !show;
-      if (show) visible += 1;
-    });
-
-    if (count) count.textContent = String(visible);
-    if (empty) empty.hidden = visible !== 0;
-    grid?.setAttribute('data-filtered', visible === 0 ? 'true' : 'false');
   }
-
-  brandFilter?.addEventListener('change', applyFilter);
-  search?.addEventListener('input', applyFilter);
-  applyFilter();
 </script>
 
 <style>
-  .filters {
-    display: grid;
-    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) auto;
-    align-items: end;
-    gap: var(--space-4);
+  .catalog-search {
     margin-block: var(--space-8) var(--space-6);
     padding: var(--space-4);
     border: 1px solid var(--color-border);
@@ -207,26 +317,157 @@ const schemas = [
     background: var(--color-surface);
   }
 
-  .filters__count {
-    color: var(--color-muted);
-    font-size: var(--step--1);
-    white-space: nowrap;
+  .catalog-search__field {
+    max-width: 34rem;
   }
 
-  .filters__count strong {
+  .catalog-search__suggest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .catalog-search__suggest button {
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      border-color 140ms ease-out,
+      color 140ms ease-out;
+  }
+
+  .catalog-search__suggest button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .catalog-block {
+    margin-top: var(--space-10);
+  }
+
+  .catalog-block__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+
+  .catalog-block__count {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  .brands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+
+  .brand-tile {
+    display: grid;
+    gap: 0.15rem;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition:
+      border-color 150ms ease-out,
+      transform 150ms ease-out;
+  }
+
+  .brand-tile:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+
+  .brand-tile__name {
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-tile__count {
+    color: var(--color-muted);
+    font-size: 0.76rem;
+  }
+
+  .search-results {
+    margin-top: var(--space-6);
+  }
+
+  .search-results__meta {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .search-results__meta strong {
     color: var(--color-text);
   }
 
-  .catalog-grid {
-    margin-top: var(--space-2);
+  .search-results__list {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    list-style: none;
   }
 
-  .car-card[hidden] {
-    display: none;
+  .search-results__list :global(.result) {
+    display: grid;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition:
+      border-color 140ms ease-out,
+      background-color 140ms ease-out;
   }
 
-  .empty {
-    margin-top: var(--space-8);
+  .search-results__list :global(.result:hover) {
+    border-color: var(--color-accent);
+  }
+
+  .search-results__list :global(.result__brand) {
+    overflow: hidden;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .search-results__list :global(.result__name) {
+    font-weight: 600;
+  }
+
+  .search-results__list :global(.result__years) {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    white-space: nowrap;
+  }
+
+  .search-results__list :global(.result__arrow) {
+    color: var(--color-accent);
+  }
+
+  .search-results__empty {
+    margin-top: var(--space-6);
     padding: var(--space-6);
     border: 1px dashed var(--color-border-strong);
     border-radius: var(--radius-md);
@@ -234,27 +475,23 @@ const schemas = [
     text-align: center;
   }
 
-  .empty a {
+  .search-results__empty a {
     color: var(--color-accent);
   }
 
   @media (max-width: 760px) {
-    .filters {
+    .catalog-search {
       position: sticky;
       top: calc(var(--header-h) + 0.25rem);
       z-index: 20;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-      align-items: center;
-      gap: var(--space-2);
       margin-block: var(--space-6) var(--space-5);
-      padding: var(--space-2);
+      padding: var(--space-2) var(--space-3);
       background: color-mix(in srgb, var(--color-surface) 94%, transparent);
       backdrop-filter: blur(14px);
       box-shadow: var(--shadow-md);
     }
 
-    /* Подписи нужны скринридерам, но на телефоне место дороже. */
-    .filters .field label {
+    .catalog-search__field label {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -263,20 +500,22 @@ const schemas = [
       white-space: nowrap;
     }
 
-    .filters select,
-    .filters input[type='search'] {
-      padding-inline: 0.65rem;
-      font-size: var(--step--1);
+    .catalog-search__suggest {
+      display: none;
     }
 
-    .filters__count {
+    .search-results__list :global(.result) {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.15rem var(--space-3);
+      padding: var(--space-3);
+    }
+
+    .search-results__list :global(.result__brand) {
       grid-column: 1 / -1;
-      font-size: 0.72rem;
-      text-align: center;
     }
 
-    .catalog-grid {
-      gap: var(--space-3);
+    .search-results__list :global(.result__arrow) {
+      display: none;
     }
   }
 </style>

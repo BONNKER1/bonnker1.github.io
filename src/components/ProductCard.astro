@@ -10,7 +10,7 @@ interface Props {
 
 const { brand, model } = Astro.props;
 const minPrice = Math.min(...films.map((film) => film.basePrice));
-const meta = [model.years, model.body].filter(Boolean);
+const body = model.body;
 const searchText = modelSearchText(brand, model);
 ---
 <a
@@ -26,7 +26,7 @@ const searchText = modelSearchText(brand, model);
   </span>
   <span class="car-card__name">{model.name}</span>
   <span class="car-card__bottom">
-    <span class="car-card__body">{meta.length ? meta.join(' · ') : 'лекала в наличии'}</span>
+    <span class="car-card__body">{body ?? 'лекала в наличии'}</span>
     <span class="car-card__price">от {formatPrice(minPrice)}</span>
   </span>
 </a>

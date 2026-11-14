@@ -61,6 +61,54 @@ MAKE_WORDS.add('ленд');
 MAKE_WORDS.add('ровер');
 MAKE_WORDS.add('йонг');
 
+/** Все написания марки по её slug — для чистки названий моделей и поиска. */
+const MAKE_ALIASES_BY_SLUG = new Map();
+for (const [slug, name, aliases] of MAKES) {
+  MAKE_ALIASES_BY_SLUG.set(slug, [name, name.replace(/\s*\([^)]*\)/, ''), ...aliases]);
+}
+
+/** Марки, которых не было в словаре: добавляются из базы лекал на лету. */
+const DYNAMIC_MAKES = [];
+
+/** «Лекала для тонировки на передние боковые стекла Акура (Acura)» → «Acura». */
+function normalizeBrandName(raw) {
+  let name = raw
+    .replace(/^Лекала для тонировки на передние боковые стекла\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const paren = name.match(/^(.+?)\s*\(([^)]+)\)$/);
+  if (paren) {
+    const outer = paren[1].trim();
+    const inner = paren[2].trim();
+    name = /[A-Za-z]/.test(inner) ? inner : outer;
+  }
+
+  if (name.includes('/')) {
+    const parts = name.split('/').map((part) => part.trim()).filter(Boolean);
+    name = parts.find((part) => /[A-Za-z]/.test(part)) ?? parts[0];
+  }
+
+  return name.trim();
+}
+
+/** Марка из базы лекал → канонический slug и имя (или новая марка). */
+function resolveMake(rawName) {
+  const name = normalizeBrandName(rawName);
+  const key = name.toLowerCase();
+
+  if (MAKE_BY_ALIAS.has(key)) return MAKE_BY_ALIAS.get(key);
+
+  const slug = slugify(name) || key.replace(/[^a-z0-9]+/g, '-');
+  const make = { slug, name };
+  MAKE_BY_ALIAS.set(key, make);
+  MAKE_BY_ALIAS.set(slug, make);
+  MAKE_WORDS.add(key);
+  DYNAMIC_MAKES.push(make);
+  MAKE_ALIASES_BY_SLUG.set(slug, [name, key]);
+  return make;
+}
+
 /** Что не является лекалом — пропускаем. */
 const SKIP = [/^\s*на\s+холсте/i, /ракель/i, /фетр/i, /^полоса\s+на\s+лобовое/i, /^съёмная\s+тонировка$/i, /^тонировка$/i];
 
@@ -407,11 +455,277 @@ for (const product of data) {
   }
 }
 
-// Годы и тип кузова оставляем, только если данных не противоречат друг другу.
+/* ------------------------------------------------------------------ */
+/* 2b. База лекал с lekalo-rf.ru                                       */
+/* ------------------------------------------------------------------ */
+
+const LEKALO_FILE = 'import/lekalo.json';
+const lekaloData = fs.existsSync(LEKALO_FILE)
+  ? JSON.parse(fs.readFileSync(LEKALO_FILE, 'utf8'))
+  : { brands: [] };
+
+/** Служебные позиции каталога («Базы лекал оптом») — не модели. */
+const LEKALO_JUNK = /^базы лекал/i;
+
+const normName = (value) =>
+  deHomoglyph(value).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim();
+
+/** «(04.1989 - 1995)», «2007 - ...», «2016 - 05.2020», «2024» → «1989–1995» / «2024». */
+function parseLekaloYears(title) {
+  const text = title.replace(/\s*лекало[\s\S]*$/i, ' ');
+  const shortOpen = text.match(/\((\d{2})\s*[-–—]\s*\.{2,}\)/);
+  if (shortOpen) return `20${shortOpen[1]}–н.в.`;
+  const shortRange = text.match(/\((\d{2})\s*[-–—]\s*(\d{2})\)/);
+  if (shortRange) return `20${shortRange[1]}–20${shortRange[2]}`;
+  // «Accord 6 america 97-02» — сокращённые годы без скобок.
+  const bareShort = text.match(/\b(\d{2})\s*[-–—]\s*(\d{2})\b/);
+  if (bareShort) {
+    const century = (yy) => (Number(yy) >= 70 ? `19${yy}` : `20${yy}`);
+    return `${century(bareShort[1])}–${century(bareShort[2])}`;
+  }
+  const ranges = [
+    ...text.matchAll(
+      /((?:\d{1,2}\.)?(?:19|20)\d{2})\s*[-–—]\s*((?:\d{1,2}\.)?(?:19|20)\d{2}|н\.?\s?в\.?|\.{2,})/gi,
+    ),
+  ];
+  if (ranges.length) {
+    const [, rawFrom, rawTo] = ranges[ranges.length - 1];
+    const from = rawFrom.replace(/^\d{1,2}\./, '');
+    let to = rawTo.replace(/\s+/g, '');
+    if (/^\d{1,2}\./.test(to)) to = to.replace(/^\d{1,2}\./, '');
+    if (/^(\.{2,}|н\.?в\.?)$/i.test(to)) to = 'н.в.';
+    return to === from ? from : `${from}–${to}`;
+  }
+  const singles = [...text.matchAll(/\b((?:19|20)\d{2})\b/g)];
+  return singles.length ? singles[singles.length - 1][1] : undefined;
+}
+
+/** Слова, которые можно срезать в начале названия модели. */
+const MAKE_PREFIX_ONLY = {
+  gaz: ['газ', 'gaz'],
+  uaz: ['уаз', 'uaz'],
+  volga: ['волга'],
+  lada: ['lada', 'ваз', 'лада', 'ba3', 'baz'],
+};
+
+/** Убираем марку в начале названия: «Toyota 4Runner…» → «4Runner…», «ВАЗ Лада Нива» → «Нива». */
+function stripBrandPrefix(name, make) {
+  const variants = new Set(
+    (MAKE_PREFIX_ONLY[make.slug] ?? MAKE_ALIASES_BY_SLUG.get(make.slug) ?? [make.name]).map((alias) =>
+      normName(alias),
+    ),
+  );
+  let words = name.split(/\s+/).filter(Boolean);
+
+  for (let pass = 0; pass < 3 && words.length; pass += 1) {
+    const firstTwo = normName(words.slice(0, 2).join(' '));
+    if (words.length > 2 && variants.has(firstTwo)) {
+      words = words.slice(2);
+      continue;
+    }
+    if (variants.has(normName(words[0]))) {
+      words = words.slice(1);
+      continue;
+    }
+    break;
+  }
+
+  return words.join(' ');
+}
+
+/** Название модели без годов, марки и служебного хвоста «лекало…». */
+function cleanLekaloModel(title, make) {
+  let name = title.replace(/\s*лекало[\s\S]*$/i, ' ').trim();
+  name = name.replace(/\s*\(\d{2}\s*[-–—]\s*\.{2,}\)\s*/g, ' ');
+  name = name.replace(/\s*\(\d{2}\s*[-–—]\s*\d{2}\)\s*/g, ' ');
+  name = name.replace(/\b\d{2}\s*[-–—]\s*\d{2}\b/g, ' ');
+  name = name.replace(
+    /\(?\s*(?:\d{1,2}\.)?(?:19|20)\d{2}\s*[-–—]\s*(?:(?:\d{1,2}\.)?(?:19|20)\d{2}|н\.?\s?в\.?|\.{2,})\s*\)?/gi,
+    ' ',
+  );
+  name = name.replace(/\(?\s*(?:\d{1,2}\.)?(?:19|20)\d{2}\s*\)?/g, ' ');
+  name = stripBrandPrefix(name, make);
+  // Частые опечатки-гомоглифы в названиях каталога.
+  name = name.replace(/tou[аa]reg/gi, 'Touareg').replace(/^x(\d)\b/i, 'X$1');
+  return name
+    .replace(/^[-–—,;:\s]+/, '')
+    .replace(/[-–—,;:\s]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** «ПАТРИОТ» → «Патриот», «largus (ларгус)» → «Largus (ларгус)». */
+function smartCase(name) {
+  if (name.length > 3 && name === name.toUpperCase() && /[А-ЯЁ]/.test(name)) {
+    return name
+      .toLowerCase()
+      .replace(/(^|[\s-])([а-яё])/g, (_, prefix, char) => prefix + char.toUpperCase());
+  }
+  return name
+    .split(' ')
+    .map((word) => (/^[A-Z]{4,}$/.test(word) ? word[0] + word.slice(1).toLowerCase() : word))
+    .join(' ');
+}
+
+/** Приводим пунктуацию и пробелы в названии к аккуратному виду. */
+function tidyName(name) {
+  return name
+    .replace(/(?:\s*,\s*)+/g, ', ')
+    .replace(/\s+([,.;])/g, '$1')
+    .replace(/\s+[-–—]\s+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[,;.\s]+/, '')
+    .replace(/[,;.\s]+$/, '')
+    .trim();
+}
+
+/** Тип кузова выносим из названия в отдельное поле. */
+const LEKALO_BODY_WORDS = [
+  [/(?:^|[\s,])джип\s*\/?\s*suv(?=[\s,]|$)/i, 'внедорожник'],
+  [/(?:^|[\s,])suv(?=[\s,]|$)/i, 'внедорожник'],
+  [/(?:^|[\s,])внедорожник(?=[\s,]|$)/i, 'внедорожник'],
+  [/(?:^|[\s,])кроссовер(?=[\s,]|$)/i, 'кроссовер'],
+  [/(?:^|[\s,])хэтчбек(?=[\s,]|$)/i, 'хэтчбек'],
+  [/(?:^|[\s,])универсал(?=[\s,]|$)/i, 'универсал'],
+  [/(?:^|[\s,])минивэн(?=[\s,]|$)/i, 'минивэн'],
+  [/(?:^|[\s,])купе(?=[\s,]|$)/i, 'купе'],
+  [/(?:^|[\s,])кабриолет(?=[\s,]|$)/i, 'кабриолет'],
+  [/(?:^|[\s,])открытый кузов\s*\d*(?=[\s,]|$)/i, 'кабриолет'],
+  [/(?:^|[\s,])седан(?=[\s,]|$)/i, 'седан'],
+  [/(?:^|[\s,])лифтбек(?=[\s,]|$)/i, 'лифтбек'],
+];
+
+function splitBody(name) {
+  let body = '';
+  let rest = ` ${name} `;
+  for (const [re, label] of LEKALO_BODY_WORDS) {
+    if (re.test(rest)) {
+      body ||= label;
+      rest = rest.replace(re, ' ');
+    }
+  }
+  return { name: tidyName(rest), body };
+}
+
+
+/** Ручные соответствия лекал и уже существующих моделей. */
+const LEKALO_MODEL_FIX = {
+  lada: {
+    '2101-06': '2101 2106',
+    '2105-07': '2105 2107',
+    '2108, 2113': '2108 2113',
+    '2109, 21099, 2114, 2115': '2109 2114 2115',
+    '2110, приора': '2110 2111 2112',
+    '21124 (12 купе)': '2112',
+    'largus (ларгус)': 'Ларгус',
+    'нива urban': 'Нива Урбан',
+  },
+  volga: {
+    'сайбер седан, 1 поколение': 'Сайбер',
+  },
+};
+
+function applyModelFix(name, make) {
+  const map = LEKALO_MODEL_FIX[make.slug];
+  if (!map) return name;
+  return map[name.toLowerCase().replace(/\s+/g, ' ').trim()] ?? name;
+}
+
+const nameIndex = new Map();
+for (const entry of entries.values()) {
+  nameIndex.set(`${entry.brandSlug}/${normName(entry.name)}`, entry);
+}
+
+let lekaloAdded = 0;
+let lekaloMerged = 0;
+let lekaloSkipped = 0;
+
+for (const rawBrand of lekaloData.brands ?? []) {
+  const items = (rawBrand.items ?? []).filter((item) => !LEKALO_JUNK.test(item.name ?? ''));
+  if (!items.length) continue;
+
+  let make = resolveMake(rawBrand.name);
+
+  for (const item of items) {
+    let targetMake = make;
+    const rawName = item.name ?? '';
+    const preStripped = stripBrandPrefix(rawName, make);
+
+    // В каталоге ГАЗ / УАЗ / Волга лежат вперемешку — разводим по своим маркам.
+    if (/^газ(?:ель|он)?(?![а-яё])/i.test(preStripped)) targetMake = resolveMake('ГАЗ');
+    else if (/^уаз(?![а-яё])/i.test(preStripped)) targetMake = resolveMake('УАЗ');
+    else if (/^волга(?![а-яё])/i.test(preStripped)) targetMake = resolveMake('Волга');
+
+    const title = item.title || rawName;
+    const years = item.years || parseLekaloYears(title);
+    const cleaned = applyModelFix(cleanLekaloModel(rawName, targetMake), targetMake);
+    const { name: namePart, body } = splitBody(cleaned);
+    const display = smartCase(tidyName(namePart));
+    if (!display) {
+      lekaloSkipped += 1;
+      continue;
+    }
+
+    const baseSlug = slugify(display).slice(0, 70).replace(/-+$/, '') || slugify(title);
+    if (!baseSlug) {
+      lekaloSkipped += 1;
+      continue;
+    }
+
+    const nameKey = `${targetMake.slug}/${normName(display)}`;
+    let entry = nameIndex.get(nameKey);
+
+    if (entry) {
+      if (years) entry.yearSet.add(years);
+      if (years && !entry.years) entry.years = years;
+      if (body) entry.bodySet.add(body);
+      if (item.url && !entry.lekaloUrl) entry.lekaloUrl = item.url;
+      lekaloMerged += 1;
+      continue;
+    }
+
+    let slug = baseSlug;
+    let counter = 2;
+    while (entries.has(`${targetMake.slug}/${slug}`)) {
+      slug = `${baseSlug}-${counter}`;
+      counter += 1;
+    }
+
+    entry = {
+      brandSlug: targetMake.slug,
+      brandName: targetMake.name,
+      name: display,
+      slug,
+      years: years ?? '',
+      yearSet: new Set(years ? [years] : []),
+      body,
+      bodySet: new Set(body ? [body] : []),
+      aliases: new Set(),
+      wb: {},
+      ozon: {},
+      count: 0,
+      lekaloUrl: item.url,
+    };
+    entries.set(`${targetMake.slug}/${slug}`, entry);
+    nameIndex.set(nameKey, entry);
+    lekaloAdded += 1;
+  }
+}
+
+// Название, состоящее только из годов («1975–1986»), — это не модель, а подпись товара.
+const YEAR_ONLY =
+  /^(?:(?:19|20)\d{2}\s*[-–—]\s*(?:(?:19|20)\d{2}|н\.?\s?в\.?)|(?:19|20)\d{2})$/i;
+for (const [key, e] of entries) {
+  if (YEAR_ONLY.test(e.name.trim())) entries.delete(key);
+}
+
+// Годы и тип кузова оставляем, только если данные не противоречат друг другу.
 for (const e of entries.values()) {
   e.years = e.yearSet.size === 1 ? [...e.yearSet][0] : '';
   e.body = e.bodySet.size === 1 ? [...e.bodySet][0] : '';
 }
+
+
 
 /* ------------------------------------------------------------------ */
 /* 3. Сборка файла                                                     */
@@ -427,9 +741,12 @@ for (const brand of byBrand.values()) {
   brand.models.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'));
 }
 
-const brandList = [...byBrand.values()].sort(
-  (a, b) => b.models.length - a.models.length || a.name.localeCompare(b.name, 'ru'),
-);
+const brandList = [...byBrand.values()].sort((a, b) => {
+  // Lada — первая: с неё чаще всего начинают выбор.
+  if (a.slug === 'lada') return -1;
+  if (b.slug === 'lada') return 1;
+  return a.name.localeCompare(b.name, 'ru');
+});
 
 // «Популярные» — витрина на главной: самые спрашиваемые лекала.
 const POPULAR = [
@@ -455,6 +772,18 @@ for (const [brandSlug, needles] of POPULAR) {
   if (hit) popular.add(`${hit.brandSlug}/${hit.slug}`);
 }
 
+const ALL_MAKES = [...MAKES];
+for (const make of DYNAMIC_MAKES) {
+  if (!ALL_MAKES.some(([slug]) => slug === make.slug)) {
+    ALL_MAKES.push([make.slug, make.name, [make.name.toLowerCase()].filter((alias) => alias !== make.slug), 999]);
+  }
+}
+
+const BRAND_ALIASES_MAP = {};
+for (const [slug, , aliases] of ALL_MAKES) {
+  BRAND_ALIASES_MAP[slug] = [...new Set(aliases.filter((alias) => alias && alias !== slug))];
+}
+
 const esc = (s) => s.replace(/'/g, "\\'");
 const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard'];
 const OZON_SET_ORDER = ['front', 'rear', 'full', 'windshield'];
@@ -477,8 +806,8 @@ function ozonLiteral(model) {
   return groups.length ? `ozon: { ${groups.join(', ')} }` : '';
 }
 
-let out = `// ВНИМАНИЕ: файл сгенерирован из выгрузок Wildberries (import/wb-api.json)
-// и Ozon (import/ozon-api.json).
+let out = `// ВНИМАНИЕ: файл сгенерирован из выгрузок Wildberries (import/wb-api.json),
+// Ozon (import/ozon-api.json) и базы лекал (import/lekalo.json).
 // Пересобрать: node scripts/build-cars.mjs
 // Правки вручную лучше вносить в scripts/build-cars.mjs (словарь марок и правила разбора).
 
@@ -514,7 +843,7 @@ export interface CarBrand {
 }
 
 const BRAND_ALIASES: Record<string, string[]> = {
-${MAKES.map(([slug, , aliases]) => `  ${slug}: [${aliases.filter((a) => a !== slug).map((a) => `'${esc(a)}'`).join(', ')}],`).join('\n')}
+${ALL_MAKES.map(([slug, , aliases]) => `  '${slug}': [${aliases.filter((a) => a && a !== slug).map((a) => `'${esc(a)}'`).join(', ')}],`).join('\n')}
 };
 
 /** База лекал магазина. */
@@ -575,7 +904,48 @@ export function modelSearchText(brand: CarBrand, model: CarModel): string {
 
 fs.writeFileSync('src/data/cars.ts', out, 'utf8');
 
-console.log('марок:', brandList.length, '| моделей:', entries.size, '| пропущено:', skipped.length);
+/* Поисковый индекс: каталог и подбор модели загружают его по требованию. */
+const brandPositions = new Map(brandList.map((brand, index) => [brand.slug, index]));
+const indexBrands = brandList.map((brand) => [
+  brand.slug,
+  brand.name,
+  [...new Set([brand.name, ...(brand.aliases ?? []), ...(BRAND_ALIASES_MAP[brand.slug] ?? [])])]
+    .join(' ')
+    .toLowerCase(),
+]);
+const indexModels = [];
+for (const brand of brandList) {
+  for (const model of brand.models) {
+    indexModels.push([
+      brandPositions.get(brand.slug),
+      model.slug,
+      model.name,
+      model.years ?? '',
+      [...(model.aliases ?? [])].join(' '),
+    ]);
+  }
+}
+fs.mkdirSync('public', { recursive: true });
+fs.writeFileSync(
+  'public/catalog-index.json',
+  JSON.stringify({ brands: indexBrands, models: indexModels }),
+  'utf8',
+);
+
+console.log(
+  'марок:',
+  brandList.length,
+  '| моделей:',
+  entries.size,
+  '| из лекал добавлено:',
+  lekaloAdded,
+  '| объединено:',
+  lekaloMerged,
+  '| пропущено лекал:',
+  lekaloSkipped,
+  '| пропущено WB:',
+  skipped.length,
+);
 console.log('популярные:', [...popular].join(', '));
 fs.writeFileSync('import/skipped.txt', skipped.join('\n'), 'utf8');
 

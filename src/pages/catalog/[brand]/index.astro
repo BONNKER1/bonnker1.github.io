@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
-import ProductCard from '../../../components/ProductCard.astro';
-import { brands, type CarBrand } from '../../../data/cars';
+import { brands, modelSearchText, type CarBrand } from '../../../data/cars';
+import { modelOzonLink, modelWbLink } from '../../../lib/marketplaces';
 import { breadcrumbsSchema } from '../../../lib/schema';
 
 export function getStaticPaths() {
@@ -27,9 +27,10 @@ const schemas = [
   ]),
 ];
 ---
+
 <BaseLayout
   title={`Тонировка ${brandLabel} по лекалам`}
-  description={`Съёмная тонировка для ${brandLabel}: ${brand.models.length} моделей в базе лекал. Передние и задние полусферы, полный комплект, силиконовая, классическая, атермальная и жёсткая Premium плёнка.`}
+  description={`Съёмная тонировка для ${brandLabel}: ${brand.models.length} моделей в базе лекал с годами выпуска. Передние и задние полусферы, полный комплект, силиконовая, классическая, атермальная и жёсткая Premium плёнка.`}
   schemas={schemas}
 >
   <div class="container">
@@ -47,19 +48,303 @@ const schemas = [
       <p class="eyebrow">Марка</p>
       <h1>Тонировка {brandLabel} по лекалам</h1>
       <p class="lead">
-        Выберите модель — покажем комплекты, степень затемнения и цену. Все лекала проверены
-        под конкретный кузов.
+        {brand.models.length} моделей в базе. Годы выпуска — в отдельном столбце, рядом прямые
+        ссылки на Wildberries и Ozon: где есть точная карточка — ведём на неё, где нет — на поиск
+        по магазину.
       </p>
 
-      <div class="grid grid--4 brand-grid">
-        {brand.models.map((model) => <ProductCard brand={brand} model={model} />)}
+      <div class="brand-tools">
+        <div class="field brand-tools__field">
+          <label for="brand-search">Поиск по модели</label>
+          <input
+            id="brand-search"
+            type="search"
+            data-search
+            placeholder={`Например: ${brand.models[0]?.name ?? 'Camry'}`}
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            inputmode="search"
+            enterkeyhint="search"
+          />
+        </div>
+        <p class="brand-tools__count">
+          Показано <strong data-count>{brand.models.length}</strong> из {brand.models.length}
+        </p>
       </div>
+
+      <div class="models-wrap">
+        <table class="models">
+          <thead>
+            <tr>
+              <th scope="col">Модель</th>
+              <th scope="col" class="models__years">Годы выпуска</th>
+              <th scope="col" class="models__buy-head">Купить</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              brand.models.map((model) => {
+                const wb = modelWbLink(brand, model);
+                const ozon = modelOzonLink(brand, model);
+                const href = `/catalog/${brand.slug}/${model.slug}/`;
+                return (
+                  <tr data-row data-search={modelSearchText(brand, model)}>
+                    <td class="models__name">
+                      <a href={href}>{model.name}</a>
+                      {model.body && <span class="models__body">{model.body}</span>}
+                    </td>
+                    <td class="models__years">{model.years ?? '—'}</td>
+                    <td class="models__buy">
+                      <a
+                        class="mkt mkt--wb"
+                        href={wb.href}
+                        target="_blank"
+                        rel="noopener nofollow"
+                        title={wb.exact ? 'Товар на Wildberries' : 'Поиск на Wildberries'}
+                      >
+                        WB
+                      </a>
+                      <a
+                        class="mkt mkt--oz"
+                        href={ozon.href}
+                        target="_blank"
+                        rel="noopener nofollow"
+                        title={ozon.exact ? 'Товар на Ozon' : 'Поиск на Ozon'}
+                      >
+                        Ozon
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="empty" data-empty hidden>
+        Такой модели нет в списке. <a href="/kontakty/">Напишите нам</a> — проверим лекало по вашей
+        марке и году выпуска.
+      </p>
+
+      <p class="brand-note">
+        Нет вашей модели? В базе есть лекала почти всех марок — <a href="/catalog/">вернитесь в каталог</a>
+        и поищите по названию, или <a href="/kontakty/">спросите в Telegram</a>.
+      </p>
     </div>
   </section>
 </BaseLayout>
 
+<script>
+  import { matchesQuery, fold, tokenize } from '../../../lib/search';
+
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-row]'));
+  const search = document.querySelector<HTMLInputElement>('[data-search]');
+  const count = document.querySelector<HTMLElement>('[data-count]');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+
+  const index = rows.map((row) => {
+    const text = (row.dataset.search ?? row.textContent ?? '').toLowerCase();
+    return { row, text, folded: fold(text), tokens: tokenize(text) };
+  });
+
+  function applyFilter() {
+    const query = search?.value ?? '';
+    let visible = 0;
+
+    index.forEach(({ row, text, folded, tokens }) => {
+      const show = matchesQuery(query, text, folded, tokens);
+      row.hidden = !show;
+      if (show) visible += 1;
+    });
+
+    if (count) count.textContent = String(visible);
+    if (empty) empty.hidden = visible !== 0;
+  }
+
+  search?.addEventListener('input', applyFilter);
+  applyFilter();
+</script>
+
 <style>
-  .brand-grid {
-    margin-top: var(--space-8);
+  .brand-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-block: var(--space-8) var(--space-5);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .brand-tools__field {
+    flex: 1 1 16rem;
+  }
+
+  .brand-tools__count {
+    color: var(--color-muted);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .brand-tools__count strong {
+    color: var(--color-text);
+  }
+
+  .models-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .models {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+
+  .models th {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border-strong);
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .models td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  .models tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .models tbody tr:hover {
+    background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+  }
+
+  .models__name a {
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .models__name a:hover {
+    color: var(--color-accent);
+  }
+
+  .models__body {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--color-muted);
+    font-size: 0.74rem;
+    font-weight: 400;
+  }
+
+  .models__years {
+    width: 11rem;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .models__buy-head {
+    width: 8.5rem;
+    text-align: right;
+  }
+
+  .models__buy {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .mkt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition:
+      border-color 140ms ease-out,
+      color 140ms ease-out;
+  }
+
+  .mkt + .mkt {
+    margin-left: 0.25rem;
+  }
+
+  .mkt:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .mkt--oz {
+    color: var(--color-muted);
+  }
+
+  .empty {
+    margin-top: var(--space-6);
+    padding: var(--space-6);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-md);
+    color: var(--color-muted);
+    text-align: center;
+  }
+
+  .empty a,
+  .brand-note a {
+    color: var(--color-accent);
+  }
+
+  .brand-note {
+    margin-top: var(--space-5);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .models tr[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .models th,
+    .models td {
+      padding: var(--space-2) var(--space-3);
+    }
+
+    .models__years {
+      width: 6.5rem;
+      font-size: 0.72rem;
+    }
+
+    .models__buy-head {
+      width: 6.5rem;
+    }
+
+    .models__name a {
+      font-size: var(--step--1);
+    }
   }
 </style>

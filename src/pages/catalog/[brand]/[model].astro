@@ -12,6 +12,13 @@ import {
   priceFor,
 } from '../../../data/films';
 import { site } from '../../../data/site';
+import {
+  modelLabel,
+  modelOzonLink,
+  modelWbLink,
+  ozonSearchUrl,
+  wbSearchUrl,
+} from '../../../lib/marketplaces';
 import { breadcrumbsSchema, faqSchema, productSchema } from '../../../lib/schema';
 
 export function getStaticPaths() {
@@ -38,22 +45,11 @@ const frontSet = filmSets.find((set) => set.id === 'front')!;
 // Лобовое стекло продаём только для ВАЗ.
 const hasWindshield = brand.slug === 'lada';
 
-// Типы плёнки, которые реально есть на Wildberries — по ним и ведём на товар.
-const wbFilms = new Set(films.filter((film) => model.wb?.[film.id]).map((film) => film.id));
+const autoLabel = modelLabel(brand, model);
 
-// Типы плёнки, для которых на Ozon есть хотя бы один комплект.
-const ozonFilms = new Set(
-  films
-    .filter((film) => {
-      const offers = model.ozon?.[film.id];
-      return Boolean(offers && Object.keys(offers).length);
-    })
-    .map((film) => film.id),
-);
-
-// Прямая ссылка на товар WB, если он есть в выгрузке; иначе — на магазин.
-const wbUrl = (id?: number) =>
-  id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : site.marketplaces.wildberries;
+// Прямая карточка, если она есть в выгрузке; иначе — поиск по магазину.
+const wbLink = modelWbLink(brand, model);
+const ozonLink = modelOzonLink(brand, model);
 
 const lowPrice = Math.min(...films.map((film) => priceFor(film, frontSet)));
 const highPrice = Math.max(
@@ -106,15 +102,15 @@ const schemas = [
 ];
 
 const payload = {
-  modelLabel: `${brandLabel} ${model.name}`,
+  modelLabel: autoLabel,
   films: films.map(({ id, name, basePrice, prices }) => ({ id, name, basePrice, prices })),
   sets: filmSets.map(({ id, name }) => ({ id, name })),
   windshield: hasWindshield ? windshieldSet : null,
   telegram: site.telegram,
   wb: model.wb ?? {},
-  wbShop: site.marketplaces.wildberries,
+  wbFallback: wbSearchUrl(autoLabel),
   ozon: model.ozon ?? {},
-  ozonShop: site.marketplaces.ozon,
+  ozonFallback: ozonSearchUrl(autoLabel),
 };
 ---
 <BaseLayout
@@ -171,8 +167,6 @@ const payload = {
                       <span class="opt__title">{film.name}</span>
                       <span class="opt__meta">{film.short}</span>
                       <span class="opt__price">от {formatPrice(film.basePrice)}</span>
-                      {!wbFilms.has(film.id) && <span class="opt__tag">на WB нет</span>}
-                      {!ozonFilms.has(film.id) && <span class="opt__tag">на Ozon нет</span>}
                     </span>
                   </label>
                 ))
@@ -262,8 +256,12 @@ const payload = {
 
           <div class="summary__actions">
             <Button href={site.telegram} variant="primary" external>Заказать в Telegram</Button>
-            <Button href={wbUrl(model.wb?.silicone)} variant="secondary" external>Купить на Wildberries</Button>
-            <Button href={site.marketplaces.ozon} variant="ghost" external>Купить на Ozon</Button>
+            <Button href={wbLink.href} variant="secondary" external>
+              {wbLink.exact ? 'Купить на Wildberries' : 'Найти на Wildberries'}
+            </Button>
+            <Button href={ozonLink.href} variant="ghost" external>
+              {ozonLink.exact ? 'Купить на Ozon' : 'Найти на Ozon'}
+            </Button>
           </div>
 
           <p class="summary__note" data-wb-note hidden>
@@ -346,10 +344,11 @@ const payload = {
     telegram: string;
     /** Артикулы Wildberries: тип плёнки → id товара. */
     wb: Record<string, number>;
-    wbShop: string;
+    /** Поиск по магазину, если точного артикула нет. */
+    wbFallback: string;
     /** Товары Ozon: тип плёнки → комплект → SKU и варианты по светопропусканию. */
     ozon: Record<string, Partial<Record<'front' | 'rear' | 'full' | 'windshield', OzonOffer>>>;
-    ozonShop: string;
+    ozonFallback: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-configurator]');
@@ -396,24 +395,38 @@ const payload = {
       button.href = `${data.telegram}?text=${encodeURIComponent(text)}`;
     });
 
-    // Ведём на карточку именно той плёнки, что выбрана. Если её нет на WB —
-    // прячем кнопку и предлагаем Telegram, чтобы не отправлять в общий магазин.
+    // Ведём на карточку именно той плёнки, что выбрана. Если её нет в выгрузке —
+    // отправляем в поиск по магазину, а не скрываем кнопку.
     const id = data.wb[film.id];
     if (wbButton) {
-      wbButton.style.display = id ? '' : 'none';
-      wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbShop;
+      wbButton.style.display = '';
+      wbButton.href = id ? `https://www.wildberries.ru/catalog/${id}/detail.aspx` : data.wbFallback;
+      wbButton.textContent = id ? 'Купить на Wildberries' : 'Найти на Wildberries';
     }
-    if (wbNote) wbNote.hidden = Boolean(id);
+    if (wbNote) {
+      wbNote.hidden = Boolean(id);
+      if (!id) {
+        wbNote.textContent =
+          'Точного артикула для этой модели нет — откроем поиск по магазину. Или закажите в Telegram.';
+      }
+    }
 
     // Ozon: конкретный комплект выбранной плёнки + вариант по светопропусканию.
     const place = (windshield ? 'windshield' : set!.id) as 'front' | 'rear' | 'full' | 'windshield';
     const offer = data.ozon[film.id]?.[place];
     const ozonId = offer?.vlt?.[String(vlt)] ?? offer?.id;
     if (ozonButton) {
-      ozonButton.style.display = offer ? '' : 'none';
-      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : data.ozonShop;
+      ozonButton.style.display = '';
+      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : data.ozonFallback;
+      ozonButton.textContent = offer ? 'Купить на Ozon' : 'Найти на Ozon';
     }
-    if (ozonNote) ozonNote.hidden = Boolean(offer);
+    if (ozonNote) {
+      ozonNote.hidden = Boolean(offer);
+      if (!offer) {
+        ozonNote.textContent =
+          'Точного артикула для этого комплекта нет — откроем поиск по магазину. Или закажите в Telegram.';
+      }
+    }
 
     // 3D: тонируем стекла в модели Porsche 911 под выбранную степень затемнения.
     const threeCar = (window as unknown as { __threeCar?: { setTint: (value: number) => void } }).__threeCar;

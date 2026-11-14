@@ -1,22 +1,37 @@
-# Импорт ассортимента с Wildberries и Ozon
+# Импорт ассортимента: лекала, Wildberries и Ozon
+
+## База лекал (lekalo-rf.ru)
+
+Основной источник марок и моделей — публичный каталог `https://lekalo-rf.ru/bokovie_stekla/`
+(OpenCart). Парсер `scripts/lekalo-import.mjs` собирает марки, названия позиций, годы выпуска
+и ссылки в `import/lekalo.json` (около 100 марок / 1800 позиций).
+
+```sh
+node scripts/lekalo-import.mjs     # обновить import/lekalo.json
+```
+
+`scripts/build-cars.mjs` сливает эту базу с товарами WB и Ozon: чистит названия, вытаскивает
+годы и тип кузова, разводит ГАЗ / УАЗ / Волга, объединяет одинаковые модели, добавляет
+недостающие марки и генерирует `src/data/cars.ts` + `public/catalog-index.json`.
 
 ## Wildberries
 
 Данные магазина `https://www.wildberries.ru/seller/585856` лежат в `import/wb-api.json`
-(1100 товаров: id, название, бренд). Из них генерируется база лекал `src/data/cars.ts`.
+(1100 товаров: id, название, бренд). Из них берутся артикулы `wb` для прямых ссылок.
 
 ## Ozon
 
 Данные магазина `https://www.ozon.ru/seller/boonker-semnaya-tonirovka/` лежат в `import/ozon-api.json`
-(товары: id, название, url, тип плёнки, комплект, варианты по светопропусканию). Из них тоже
-строится база лекал `src/data/cars.ts` (поле `ozon`).
+(товары: id, название, url, тип плёнки, комплект, варианты по светопропусканию). Из них
+строится поле `ozon` в `src/data/cars.ts`.
 
 ## Обновить базу (обычный путь)
 
 ```sh
+node scripts/lekalo-import.mjs      # выгрузить каталог лекал в import/lekalo.json
 node scripts/wb-import.mjs 585856   # выгрузить товары с WB в import/wb-api.json
 node scripts/ozon-import.mjs        # выгрузить товары с Ozon в import/ozon-api.json
-node scripts/build-cars.mjs         # собрать src/data/cars.ts по правилам разбора
+node scripts/build-cars.mjs         # собрать src/data/cars.ts и public/catalog-index.json
 pnpm build && pnpm check && pnpm links
 ```
 
@@ -27,9 +42,11 @@ Wildberries, поэтому окно открывается на пару мин
 
 `scripts/build-cars.mjs` разбирает названия вида
 `Boonker / СЪЁМНАЯ ТОНИРОВКА Ваз 2109 2114 2115` на марку и модель, склеивает варианты
-одной модели, вытаскивает годы и русские написания для поиска. Словарь марок и ручные
-поправки (`DISPLAY_FIX`, `MODEL_RENAME`, `POPULAR`) — в начале файла. Что не является
-лекалом (лобовое, полоса, ракель, холсты), отбрасывается и попадает в `import/skipped.txt`.
+одной модели, вытаскивает годы и русские написания для поиска. Затем сливает результат с
+базой лекал: чистит названия и годы, выносит тип кузова, разводит ГАЗ / УАЗ / Волга и
+добавляет модели без артикулов. Словарь марок и ручные поправки (`LEKALO_MODEL_FIX`,
+`DISPLAY_FIX`, `MODEL_RENAME`, `POPULAR`) — в начале файла. Что не является лекалом
+(лобовое, полоса, ракель, холсты), отбрасывается и попадает в `import/skipped.txt`.
 
 ## Если автоматический путь не работает
 

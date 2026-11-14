@@ -20,18 +20,23 @@
 src/
   pages/            # маршруты: главная, каталог, типы плёнки, плёнка на отрез, доставка, FAQ, контакты, 404
     catalog/
-      index.astro           # каталог с фильтром по марке и поиском
-      [brand]/index.astro   # страница марки
+      index.astro           # каталог: поиск по всем моделям + плитки марок
+      [brand]/index.astro   # марка: таблица моделей с годами и ссылками WB/Ozon
       [brand]/[model].astro # карточка модели + конфигуратор
   layouts/          # BaseLayout.astro (SEO, OG, JSON-LD)
   components/       # Header, Footer, CarPicker, ProductCard, FilmCard, GlassSwatch и др.
   data/
-    cars.ts         # база лекал: марки → модели (демо-набор, заменить реальной базой)
+    cars.ts         # база лекал: марки → модели (генерируется, руками не правим)
     films.ts        # типы плёнки, комплекты, VLT, формула цены
     site.ts         # бренд, ссылки, контакты, статистика
-  lib/schema.ts     # JSON-LD: Organization, WebSite, BreadcrumbList, Product, FAQPage
+  lib/
+    schema.ts       # JSON-LD: Organization, WebSite, BreadcrumbList, Product, FAQPage
+    marketplaces.ts # ссылки WB/Ozon: точная карточка или поиск по магазину
+    search.ts       # клиентский поиск: транслитерация, опечатки
   styles/           # tokens.css, global.css
-public/             # favicon, robots.txt, og-default.png
+public/
+  catalog-index.json # облегчённый индекс для поиска и подбора модели (генерируется)
+  # favicon, robots.txt, og-default.png
 scripts/            # импорт базы лекал и служебные скрипты
 ```
 
@@ -55,10 +60,19 @@ pnpm og        # пересобрать OG-картинку из SVG
 
 ## База лекал
 
-- `src/data/cars.ts` генерируется: 33 марки, 227 моделей из ассортимента WB-магазина.
-- У каждой модели есть артикулы WB по типам плёнки (`wb`) — кнопка «Купить на Wildberries» ведёт на конкретный товар.
-- Пересборка: `node scripts/wb-import.mjs 585856` → `node scripts/build-cars.mjs`.
-- Правила разбора названий и ручные поправки — в начале `scripts/build-cars.mjs`.
+- `src/data/cars.ts` генерируется слиянием трёх источников: база лекал `lekalo-rf.ru` (основа),
+  ассортимент WB (`wb`) и Ozon (`ozon`). Сейчас: **100 марок, ~1840 моделей**.
+- Годы выпуска (`years`) и тип кузова (`body`) вынесены в отдельные поля; в каталоге годы —
+  отдельный столбец.
+- У моделей с точным артикулом ссылки ведут на карточку товара; у остальных — на поиск
+  по магазину (`src/lib/marketplaces.ts`), кнопки не скрываются.
+- Пересборка: `node scripts/lekalo-import.mjs` (обновить `import/lekalo.json`) →
+  `node scripts/wb-import.mjs 585856` → `node scripts/ozon-import.mjs` →
+  `node scripts/build-cars.mjs` (генерирует `src/data/cars.ts` и `public/catalog-index.json`).
+- Правила разбора названий, словарь марок и ручные поправки (`LEKALO_MODEL_FIX`,
+  `DISPLAY_FIX`, `MODEL_RENAME`, `POPULAR`) — в начале `scripts/build-cars.mjs`.
+- Годы в лекалах бывают в форматах `(08.2019 - н.в.)`, `(02-08)`, `97-02` — все три
+  разбирает `parseLekaloYears()`.
 
 ## Что заменить перед запуском
 

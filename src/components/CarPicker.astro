@@ -24,30 +24,69 @@ import { brands } from '../data/cars';
 </form>
 
 <script>
-  import { brands } from '../data/cars';
+  interface CatalogIndex {
+    brands: [string, string, string][];
+    models: [number, string, string, string, string][];
+  }
 
   const form = document.querySelector<HTMLFormElement>('[data-picker]');
   const brandSelect = form?.querySelector<HTMLSelectElement>('select[name="brand"]');
   const modelSelect = form?.querySelector<HTMLSelectElement>('select[name="model"]');
 
-  brandSelect?.addEventListener('change', () => {
+  let indexPromise: Promise<Map<string, [string, string, string][]>> | null = null;
+
+  /** Список моделей по маркам грузим один раз и только когда он понадобился. */
+  function loadModels(): Promise<Map<string, [string, string, string][]>> {
+    if (!indexPromise) {
+      indexPromise = fetch(`${import.meta.env.BASE_URL}catalog-index.json`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json() as Promise<CatalogIndex>;
+        })
+        .then((data) => {
+          const groups = new Map<string, [string, string, string][]>();
+          data.models.forEach(([brandIndex, slug, name, years]) => {
+            const brandSlug = data.brands[brandIndex]?.[0];
+            if (!brandSlug) return;
+            const list = groups.get(brandSlug) ?? [];
+            list.push([slug, name, years]);
+            groups.set(brandSlug, list);
+          });
+          return groups;
+        });
+    }
+    return indexPromise;
+  }
+
+  brandSelect?.addEventListener('change', async () => {
     if (!modelSelect) return;
 
-    const brand = brands.find((item) => item.slug === brandSelect.value);
+    const brandSlug = brandSelect.value;
     modelSelect.innerHTML = '';
 
-    if (!brand) {
+    if (!brandSlug) {
       modelSelect.disabled = true;
       modelSelect.append(new Option('Сначала выберите марку', ''));
       return;
     }
 
-    modelSelect.disabled = false;
-    modelSelect.append(new Option('Выберите модель', ''));
-    brand.models.forEach((model) => {
-      const label = model.years ? `${model.name} · ${model.years}` : model.name;
-      modelSelect.append(new Option(label, model.slug));
-    });
+    modelSelect.disabled = true;
+    modelSelect.append(new Option('Загрузка…', ''));
+
+    try {
+      const groups = await loadModels();
+      if (brandSelect.value !== brandSlug) return;
+
+      modelSelect.innerHTML = '';
+      modelSelect.append(new Option('Выберите модель', ''));
+      (groups.get(brandSlug) ?? []).forEach(([slug, name, years]) => {
+        modelSelect.append(new Option(years ? `${name} · ${years}` : name, slug));
+      });
+      modelSelect.disabled = false;
+    } catch {
+      modelSelect.innerHTML = '';
+      modelSelect.append(new Option('Не удалось загрузить модели', ''));
+    }
   });
 
   form?.addEventListener('submit', (event) => {
