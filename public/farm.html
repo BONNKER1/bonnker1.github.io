@@ -4,54 +4,90 @@
     <meta charset="UTF-8">
     <title>Boonker Farm — Command Center</title>
     <style>
-        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .dashboard { width: 400px; padding: 30px; border: 2px solid #00ff41; border-radius: 5px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); position: relative; z-index: 10; background: rgba(0,0,0,0.8); }
-        h1 { font-size: 18px; text-align: center; margin-bottom: 30px; letter-spacing: 2px; }
-        .btn { width: 100%; padding: 15px; margin: 10px 0; background: transparent; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; transition: 0.3s; font-family: inherit; font-size: 14px; }
-        .btn:hover { background: #00ff41; color: #000; }
-        #status { text-align: center; margin-top: 20px; font-size: 12px; color: #008800; height: 20px; }
-        
-        /* Анимация капель */
-        .drop { position: absolute; color: #3498db; font-size: 20px; pointer-events: none; opacity: 0; top: 0; }
+        :root { --bg: #0a0a0a; --green: #00ff41; --panel: #111; }
+        body { background: var(--bg); color: var(--green); font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        .dashboard { max-width: 800px; margin: auto; border: 1px solid var(--green); padding: 20px; border-radius: 10px; }
+        .header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .garden-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .plot { height: 100px; border: 1px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .plot:hover { border-color: var(--green); background: #002200; }
+        .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn { padding: 10px; background: transparent; border: 1px solid var(--green); color: var(--green); cursor: pointer; }
+        .btn:hover { background: var(--green); color: #000; }
+        .drop { position: absolute; color: #3498db; pointer-events: none; animation: fall 1s linear forwards; }
         @keyframes fall { 0% { transform: translateY(-50px); opacity: 1; } 100% { transform: translateY(100vh); opacity: 0; } }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
-    <h1>BOONKER • COMMAND CENTER</h1>
-    <div id="status">STATUS: SYSTEM READY</div>
-    
-    <button class="btn" onclick="act('WATERING_SYSTEM', '💧')">ACTIVATE: WATERING</button>
-    <button class="btn" onclick="act('GROW_LIGHTS', '💡')">ACTIVATE: LIGHTS</button>
-    <button class="btn" onclick="act('VENTILATION', '💨')">ACTIVATE: VENTILATION</button>
+    <div class="header">
+        <span>FARM_OS v1.0</span>
+        <span>BALANCE: <span id="balance">50</span> Sol</span>
+    </div>
+
+    <div class="garden-grid" id="garden"></div>
+
+    <h3>Магазин семян</h3>
+    <div class="shop" id="shop"></div>
 </div>
 
 <script>
-    function act(system, icon) {
-        const status = document.getElementById('status');
-        status.innerText = "EXECUTING: " + system + "...";
-        
-        if (icon === '💧') startRain();
+    let state = { balance: 50, plots: [null, null, null, null, null, null, null, null] };
+    const seeds = [
+        { name: "Базилик", price: 10, icon: "🌿", sell: 20 },
+        { name: "Томат", price: 25, icon: "🍅", sell: 50 },
+        { name: "Роза", price: 50, icon: "🌹", sell: 120 }
+    ];
 
-        setTimeout(() => {
-            status.innerText = "STATUS: " + system + " ACTIVE";
-            setTimeout(() => { status.innerText = "STATUS: SYSTEM READY"; }, 3000);
-        }, 1500);
+    function render() {
+        const garden = document.getElementById('garden');
+        garden.innerHTML = state.plots.map((p, i) => `
+            <div class="plot" onclick="harvest(${i})">
+                ${p ? `<div style="font-size:30px">${p.icon}</div><div>${p.name}</div>` : 'Empty'}
+            </div>
+        `).join('');
+        document.getElementById('balance').innerText = state.balance;
+
+        const shop = document.getElementById('shop');
+        shop.innerHTML = seeds.map(s => `
+            <button class="btn" onclick="buy('${s.name}')">${s.icon} ${s.name} (${s.price} Sol)</button>
+        `).join('');
     }
 
-    function startRain() {
-        for(let i=0; i<20; i++) {
-            const drop = document.createElement('div');
-            drop.className = 'drop';
-            drop.innerText = '💧';
-            drop.style.left = Math.random() * 100 + 'vw';
-            drop.style.animation = 'fall 1s linear forwards';
-            drop.style.animationDelay = (Math.random() * 0.5) + 's';
-            document.body.appendChild(drop);
-            setTimeout(() => drop.remove(), 1500);
+    function buy(name) {
+        const s = seeds.find(x => x.name === name);
+        if (state.balance >= s.price) {
+            const emptyIdx = state.plots.findIndex(x => x === null);
+            if (emptyIdx !== -1) {
+                state.balance -= s.price;
+                state.plots[emptyIdx] = { ...s, planted: Date.now() };
+                render();
+            } else alert("Нет свободных грядок!");
+        } else alert("Мало Sol!");
+    }
+
+    function harvest(i) {
+        if (state.plots[i]) {
+            state.balance += state.plots[i].sell;
+            state.plots[i] = null;
+            render();
+            startDrops();
         }
     }
+
+    function startDrops() {
+        for(let i=0; i<15; i++) {
+            const d = document.createElement('div');
+            d.className = 'drop';
+            d.innerText = '💧';
+            d.style.left = Math.random() * 100 + 'vw';
+            document.body.appendChild(d);
+            setTimeout(() => d.remove(), 1000);
+        }
+    }
+
+    render();
 </script>
 </body>
 </html>
