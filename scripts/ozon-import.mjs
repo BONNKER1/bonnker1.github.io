@@ -3,34 +3,34 @@
 // Результат: import/ozon-api.json
 //   { seller, importedAt, products: [{ id, name, url, film, place, vlt: { "15": { id, url, price } } }] }
 //
-// Ozon не отдаёт страницу обычному fetch (307-петля), поэтому все запросы идут
-// из контекста открытой страницы ozon.ru — там есть куки и заголовки браузера.
+// Ozon прячет каталог за виртуальной прокруткой и антиботом, поэтому карточки собираем
+// с реальной страницы магазина (прокрутка вниз до конца), а характеристики и варианты
+// по светопропусканию — из composer API в контексте этой же страницы.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 const SELLER = process.argv[2] || 'https://www.ozon.ru/seller/boonker-semnaya-tonirovka/';
-const SELLER_PATH = new URL(SELLER).pathname;
-const SELLER_PRODUCTS = `${SELLER_PATH.replace(/\/$/, '')}/products/`;
 const PORT = 9334;
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PROFILE = path.join(os.tmpdir(), 'opencode-ozon-profile');
 const OUT = path.resolve('import/ozon-api.json');
+const TINT_RE = /тониров|плёнк|пленк|силикон/i;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function launch() {
+function launch({ headful }) {
   const args = [
     `--remote-debugging-port=${PORT}`,
     `--user-data-dir=${PROFILE}`,
-    ...(process.env.HEADFUL === '1' ? [] : ['--headless=new']),
+    ...(headful ? [] : ['--headless=new']),
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-gpu',
     '--disable-blink-features=AutomationControlled',
     '--lang=ru-RU',
-    '--window-size=1440,1200',
+    '--window-size=1440,1600',
     'about:blank',
   ];
   return spawn(CHROME, args, { stdio: 'ignore' });
@@ -104,44 +104,24 @@ async function evaluate(cdp, sessionId, expression, awaitPromise = false, timeou
   return res.result.value;
 }
 
-const API = '/api/composer-api.bx/page/json/v2?url=';
-
-/** Собираем все карточки магазина, листая пагинатор. */
-const COLLECT = `(async () => {
-  const out = new Map();
-  const pages = [];
-  let next = ${JSON.stringify(SELLER_PRODUCTS)};
-  for (let p = 0; p < 80 && next; p += 1) {
-    const res = await fetch(${JSON.stringify(API)} + encodeURIComponent(next), { headers: { accept: 'application/json' } });
-    if (!res.ok) { pages.push({ path: next, error: res.status }); break; }
-    let json;
-    try { json = await res.json(); } catch { pages.push({ path: next, error: 'не JSON' }); break; }
-    let found = 0;
-    let pageNext = null;
-    for (const [name, state] of Object.entries(json.widgetStates || {})) {
-      let value;
-      try { value = JSON.parse(state); } catch { continue; }
-      if (Array.isArray(value.items) && /tileGrid/i.test(name)) {
-        for (const item of value.items) {
-          const nm = item.mainState?.find((s) => s.id === 'name')?.textDS?.text || '';
-          if (!/тониров|плёнк|пленк|силикон/i.test(nm)) continue;
-          const id = String(item.sku || item.id || '');
-          if (!id || out.has(id)) continue;
-          out.set(id, { id, name: nm, link: (item.action?.link || '').split('?')[0] });
-          found += 1;
-        }
-      }
-      if (/paginator/i.test(name) && value && typeof value === 'object' && value.nextPage) {
-        pageNext = value.nextPage;
-      }
-    }
-    pages.push({ path: next, found, total: out.size });
-    if (!pageNext || pageNext === next) break;
-    next = pageNext;
-  }
-  return { pages, items: [...out.values()] };
+/** Карточки товаров, которые сейчас отрисованы на странице магазина. */
+const COLLECT = `(() => {
+  const seen = new Map();
+  document.querySelectorAll('a[href*="/product/"]').forEach((a) => {
+    const m = (a.getAttribute('href') || '').match(/\\/product\\/(?:[^/]*?-)?(\\d{6,})\\//);
+    if (!m) return;
+    const id = m[1];
+    const card = a.closest('article') || a.closest('[class*="product-card"]') || a.parentElement?.parentElement || a;
+    // Обёртка карточки содержит название и цену.
+    const text = (a.innerText || card.innerText || '').replace(/\\s+/g, ' ').trim();
+    if (!seen.has(id)) seen.set(id, { id, href: a.href.split('?')[0], text });
+  });
+  return [...seen.values()];
 })()`;
 
+const API = '/api/composer-api.bx/page/json/v2?url=';
+
+/** Подробности карточек: название, плёнка, место установки, варианты по светопропусканию. */
 const DETAILS = (ids) => `(async () => {
   const ids = ${JSON.stringify(ids)};
   const api = ${JSON.stringify(API)};
@@ -166,6 +146,8 @@ const DETAILS = (ids) => `(async () => {
     const aspects = widget(p1, /^webAspects/);
     const chars = widget(p2, /^webCharacteristics/);
     const desc = widget(p2, /^webDescription/);
+    const sellerIdMatch = JSON.stringify(p1?.widgetStates || {}).match(/\"sellerId\"\\s*:\\s*\"?(\\d+)\"?/);
+    const sellerId = sellerIdMatch ? sellerIdMatch[1] : null;
     const variants = [];
     for (const aspect of aspects?.aspects || []) {
       if (!/LightTransmission|PlaceMount/i.test(aspect.aspectKey || '')) continue;
@@ -193,6 +175,7 @@ const DETAILS = (ids) => `(async () => {
       variants,
       characters,
       description: desc?.richAnnotation || '',
+      sellerId,
     });
   }
   return out;
@@ -203,7 +186,7 @@ const charValue = (product, key) =>
 
 /** Тип плёнки: в названии и характеристиках Ozon. */
 function detectFilm(product) {
-  const text = [product.title, ...product.characters.flatMap((c) => c.values), product.description]
+  const text = [product.title, ...product.characters.flatMap((c) => c.values)]
     .join(' ')
     .toLowerCase();
   if (/атермальн/.test(text)) return 'athermal';
@@ -224,87 +207,152 @@ function detectPlace(product) {
   return null;
 }
 
-async function main() {
-  const child = launch();
-  let cdp;
-  try {
-    cdp = new CDP(await devtoolsUrl());
-    const { targetId } = await cdp.send('Target.createTarget', { url: SELLER });
-    const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
-    await cdp.send('Runtime.enable', {}, sessionId);
-    await cdp.send('Page.enable', {}, sessionId);
-
-    // Ждём загрузку страницы магазина, чтобы появились куки.
-    for (let i = 0; i < 60; i += 1) {
-      await sleep(1000);
-      try {
-        const ready = await evaluate(
-          cdp,
-          sessionId,
-          `location.hostname === 'www.ozon.ru' && document.readyState === 'complete'`,
-        );
-        if (ready) break;
-      } catch {}
+/** Прокручиваем магазин до конца и собираем все карточки. */
+async function collectCards(cdp, sessionId) {
+  let stable = 0;
+  let last = 0;
+  const all = new Map();
+  for (let round = 0; round < 300; round += 1) {
+    const items = await evaluate(cdp, sessionId, COLLECT, false, 120000);
+    for (const item of items) if (!all.has(item.id)) all.set(item.id, item);
+    if (all.size === last) {
+      stable += 1;
+      if (stable >= 5) break;
+    } else {
+      stable = 0;
+      last = all.size;
     }
-    await sleep(2000);
+    await evaluate(cdp, sessionId, 'window.scrollTo(0, document.body.scrollHeight)', false, 30000);
+    await sleep(1200);
+  }
+  await evaluate(cdp, sessionId, 'window.scrollTo(0, 0)', false, 30000);
+  return [...all.values()];
+}
 
-    console.log('Собираю карточки магазина…');
-    const collected = await evaluate(cdp, sessionId, COLLECT, true, 600000);
-    for (const page of collected.pages) {
-      console.log(
-        `страница ${page.path.includes('page=') ? page.path.match(/page=(\\d+)/)?.[1] : 1}: +${page.found ?? 0}, всего ${page.total ?? 0}${page.error ? ` (ошибка ${page.error})` : ''}`,
+async function openSeller() {
+  const child = launch({ headful: process.env.HEADFUL === '1' });
+  const cdp = new CDP(await devtoolsUrl());
+  const { targetId } = await cdp.send('Target.createTarget', { url: SELLER });
+  const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
+  await cdp.send('Runtime.enable', {}, sessionId);
+  await cdp.send('Page.enable', {}, sessionId);
+  for (let i = 0; i < 60; i += 1) {
+    await sleep(1000);
+    try {
+      const ready = await evaluate(
+        cdp,
+        sessionId,
+        `location.hostname === 'www.ozon.ru' && document.readyState === 'complete'`,
       );
-    }
-    const items = collected.items;
-    console.log('уникальных карточек:', items.length);
-    if (!items.length) throw new Error('карточки не найдены');
+      if (ready) break;
+    } catch {}
+  }
+  await sleep(2500);
+  return { child, cdp, sessionId };
+}
 
-    const products = [];
-    const BATCH = 6;
-    for (let i = 0; i < items.length; i += BATCH) {
-      const batch = items.slice(i, i + BATCH);
-      const details = await evaluate(cdp, sessionId, DETAILS(batch.map((x) => x.id)), true, 600000);
-      for (const detail of details) {
-        const listing = batch.find((x) => x.id === detail.id);
-        const film = detectFilm(detail);
-        const place = detectPlace(detail);
-        const vlt = {};
-        for (const variant of detail.variants) {
-          if (variant.key !== 'LightTransmissionAuto') continue;
-          const value = Number(variant.vlt);
-          if (!value || !variant.sku) continue;
-          vlt[value] = {
-            id: variant.sku,
-            url: `https://www.ozon.ru${variant.url}`,
-            price: variant.price,
-          };
-        }
-        const ownVlt = Number(charValue(detail, 'LightTransmissionAuto'));
-        if (ownVlt && !vlt[ownVlt]) {
-          vlt[ownVlt] = { id: detail.id, url: `https://www.ozon.ru${detail.url}`, price: null };
-        }
-        products.push({
-          id: detail.id,
-          name: listing?.name || detail.title,
-          url: `https://www.ozon.ru${detail.url}`,
-          film,
-          place,
-          placeText: charValue(detail, 'PlaceMount') || null,
-          material: charValue(detail, 'Material_Auto') || null,
-          vlt,
-        });
-      }
-      console.log(`товары ${Math.min(i + BATCH, items.length)}/${items.length}`);
+async function run() {
+  let session = null;
+  try {
+    console.log(process.env.HEADFUL === '1' ? 'Открываю видимое окно Chrome…' : 'Пробую headless…');
+    session = await openSeller();
+    let cards = await collectCards(session.cdp, session.sessionId);
+    console.log('headless собрано карточек:', cards.length);
+    if (process.env.HEADFUL !== '1' && cards.length < 20) {
+      console.log('Слишком мало — перезапускаю в видимом окне Chrome…');
+      session.cdp.close();
+      session.child.kill();
+      await sleep(1500);
+      process.env.HEADFUL = '1';
+      session = await openSeller();
+      cards = await collectCards(session.cdp, session.sessionId);
+      console.log('видимое окно собрало карточек:', cards.length);
     }
+
+    const tint = cards.filter((c) => TINT_RE.test(c.text));
+    console.log('из них тонировка:', tint.length, '| всего карточек:', cards.length);
+    if (!tint.length) throw new Error('карточки не найдены');
+
+    const products = new Map();
+    const BATCH = 6;
+    const CONCURRENCY = 6;
+    const batches = [];
+    for (let i = 0; i < tint.length; i += BATCH) batches.push(tint.slice(i, i + BATCH));
+
+    let done = 0;
+    const worker = async () => {
+      while (batches.length) {
+        const batch = batches.shift();
+        if (!batch) break;
+        let details = [];
+        try {
+          details = await evaluate(session.cdp, session.sessionId, DETAILS(batch.map((x) => x.id)), true, 600000);
+        } catch (err) {
+          console.log('  подробности не получены:', err.message);
+          details = [];
+        }
+        for (const id of batch.map((x) => x.id)) {
+          const listing = batch.find((x) => x.id === id);
+          const detail = details.find((x) => String(x.id) === String(id));
+          if (!detail) {
+            // Без подробностей сохраняем только если в названии явно тонировка.
+            const name = (listing?.text || '').replace(/\s+/g, ' ').trim();
+            if (!TINT_RE.test(name)) continue;
+            products.set(id, {
+              id,
+              name,
+              url: `https://www.ozon.ru/product/${id}/`,
+              film: /атерм/i.test(name) ? 'athermal' : /классич/i.test(name) ? 'classic' : 'silicone',
+              place: /лобов/i.test(name) ? 'windshield' : 'full',
+              placeText: null,
+              material: null,
+              vlt: {},
+            });
+            continue;
+          }
+          // Товары чужих продавцов, попавшие в выдачу как «похожие», пропускаем.
+          if (detail.sellerId && detail.sellerId !== '406187') continue;
+          // Товары-рекомендации других продавцов в выдаче магазина отбрасываем.
+          if (!TINT_RE.test(detail.title || '')) continue;
+          const film = detectFilm(detail);
+          const place = detectPlace(detail);
+          const vlt = {};
+          for (const variant of detail.variants) {
+            if (variant.key !== 'LightTransmissionAuto') continue;
+            const value = Number(variant.vlt);
+            if (!value || !variant.sku) continue;
+            vlt[value] = { id: variant.sku, url: `https://www.ozon.ru${variant.url}`, price: variant.price };
+          }
+          const ownVlt = Number(charValue(detail, 'LightTransmissionAuto'));
+          if (ownVlt && !vlt[ownVlt]) {
+            vlt[ownVlt] = { id: detail.id, url: `https://www.ozon.ru${detail.url}`, price: null };
+          }
+          products.set(id, {
+            id: detail.id,
+            name: detail.title || (listing?.text || '').replace(/\s+/g, ' ').trim(),
+            url: `https://www.ozon.ru${detail.url}`,
+            film,
+            place,
+            placeText: charValue(detail, 'PlaceMount') || null,
+            material: charValue(detail, 'Material_Auto') || null,
+            vlt,
+          });
+        }
+        done += batch.length;
+        console.log(`товары ${done}/${tint.length}`);
+      }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+    const list = [...products.values()];
 
     fs.writeFileSync(
       OUT,
-      JSON.stringify({ seller: SELLER, importedAt: new Date().toISOString(), products }, null, 2),
+      JSON.stringify({ seller: SELLER, importedAt: new Date().toISOString(), products: list }, null, 2),
       'utf8',
     );
     const byFilm = {};
     const byPlace = {};
-    for (const p of products) {
+    for (const p of list) {
       byFilm[p.film ?? 'нет'] = (byFilm[p.film ?? 'нет'] || 0) + 1;
       byPlace[p.place ?? 'нет'] = (byPlace[p.place ?? 'нет'] || 0) + 1;
     }
@@ -312,12 +360,14 @@ async function main() {
     console.log('по плёнке:', JSON.stringify(byFilm));
     console.log('по месту:', JSON.stringify(byPlace));
   } finally {
-    cdp?.close();
-    child.kill();
+    if (session) {
+      session.cdp?.close();
+      session.child.kill();
+    }
   }
 }
 
-main().catch((err) => {
+run().catch((err) => {
   console.error('ОШИБКА:', err.message);
   process.exitCode = 1;
 });

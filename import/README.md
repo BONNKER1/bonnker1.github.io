@@ -23,7 +23,7 @@ node scripts/lekalo-import.mjs     # обновить import/lekalo.json
 
 Данные магазина `https://www.ozon.ru/seller/boonker-semnaya-tonirovka/` лежат в `import/ozon-api.json`
 (товары: id, название, url, тип плёнки, комплект, варианты по светопропусканию). Из них
-строится поле `ozon` в `src/data/cars.ts`.
+строится поле `ozon` в `src/data/cars.ts`. В магазине несколько тысяч товаров, поэтому выгрузка долгая.
 
 ## Обновить базу (обычный путь)
 
@@ -34,6 +34,12 @@ node scripts/ozon-import.mjs        # выгрузить товары с Ozon в
 node scripts/build-cars.mjs         # собрать src/data/cars.ts и public/catalog-index.json
 pnpm build && pnpm check && pnpm links
 ```
+
+`scripts/ozon-import.mjs` прокручивает страницу магазина до конца (Ozon прячет каталог за
+виртуальной прокруткой, API отдаёт только первые 2 страницы), собирает карточки с двух
+страниц — `/seller/.../` и `/seller/.../products/` — а характеристики и варианты по
+светопропусканию тянет из composer API в контексте этой же страницы. Если headless-режим
+отдаёт меньше 20 карточек, скрипт сам перезапускается в видимом окне Chrome.
 
 `scripts/wb-import.mjs` запускает отдельный Chrome (headless не проходит антибот-проверку
 Wildberries, поэтому окно открывается на пару минут), ждёт загрузки каталога продавца,
