@@ -2,92 +2,66 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Boonker Farm — Command Center</title>
+    <title>Boonker Bio-System</title>
     <style>
-        :root { --bg: #0a0a0a; --green: #00ff41; --panel: #111; }
-        body { background: var(--bg); color: var(--green); font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
-        .dashboard { max-width: 800px; margin: auto; border: 1px solid var(--green); padding: 20px; border-radius: 10px; }
-        .header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .garden-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .plot { height: 100px; border: 1px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .plot:hover { border-color: var(--green); background: #002200; }
-        .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn { padding: 10px; background: transparent; border: 1px solid var(--green); color: var(--green); cursor: pointer; }
-        .btn:hover { background: var(--green); color: #000; }
-        .drop { position: absolute; color: #3498db; pointer-events: none; animation: fall 1s linear forwards; }
-        @keyframes fall { 0% { transform: translateY(-50px); opacity: 1; } 100% { transform: translateY(100vh); opacity: 0; } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
+        body { background: #050505; color: #e0e0e0; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .module { padding: 20px; border-radius: 12px; background: #1a1a1a; transition: 0.3s; cursor: pointer; text-align: center; border: 1px solid #333; }
+        .module:hover { border: 1px solid #82c91e; box-shadow: 0 0 15px rgba(130, 201, 30, 0.2); }
+        .anim { animation: pulse 2s infinite; display: inline-block; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .btn-up { margin-top: 10px; background: #82c91e; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
+    <h1 style="color: #82c91e;">BOONKER • BIO-SYSTEM</h1>
+    <div id="app"></div>
 
-<div class="dashboard">
-    <div class="header">
-        <span>FARM_OS v1.0</span>
-        <span>BALANCE: <span id="balance">50</span> Sol</span>
-    </div>
+    <script>
+        const state = {
+            modules: {
+                agro: { name: 'Растения', lvl: 1, val: 0, icon: '🌿' },
+                api: { name: 'Пасека', lvl: 1, val: 0, icon: '🐝' },
+                aqua: { name: 'Бассейн', lvl: 1, val: 0, icon: '🐟' }
+            }
+        };
 
-    <div class="garden-grid" id="garden"></div>
+        function render() {
+            document.getElementById('app').innerHTML = `
+                <div class="grid">
+                    ${Object.entries(state.modules).map(([id, m]) => `
+                        <div class="module" onclick="collect('${id}')">
+                            <div class="anim" style="font-size: 50px">${m.icon}</div>
+                            <h3>${m.name} (Lvl ${m.lvl})</h3>
+                            <p>Ресурс: ${Math.floor(m.val)}</p>
+                            <button class="btn-up" onclick="event.stopPropagation(); upgrade('${id}')">Улучшить</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
 
-    <h3>Магазин семян</h3>
-    <div class="shop" id="shop"></div>
-</div>
-
-<script>
-    let state = { balance: 50, plots: [null, null, null, null, null, null, null, null] };
-    const seeds = [
-        { name: "Базилик", price: 10, icon: "🌿", sell: 20 },
-        { name: "Томат", price: 25, icon: "🍅", sell: 50 },
-        { name: "Роза", price: 50, icon: "🌹", sell: 120 }
-    ];
-
-    function render() {
-        const garden = document.getElementById('garden');
-        garden.innerHTML = state.plots.map((p, i) => `
-            <div class="plot" onclick="harvest(${i})">
-                ${p ? `<div style="font-size:30px">${p.icon}</div><div>${p.name}</div>` : 'Empty'}
-            </div>
-        `).join('');
-        document.getElementById('balance').innerText = state.balance;
-
-        const shop = document.getElementById('shop');
-        shop.innerHTML = seeds.map(s => `
-            <button class="btn" onclick="buy('${s.name}')">${s.icon} ${s.name} (${s.price} Sol)</button>
-        `).join('');
-    }
-
-    function buy(name) {
-        const s = seeds.find(x => x.name === name);
-        if (state.balance >= s.price) {
-            const emptyIdx = state.plots.findIndex(x => x === null);
-            if (emptyIdx !== -1) {
-                state.balance -= s.price;
-                state.plots[emptyIdx] = { ...s, planted: Date.now() };
-                render();
-            } else alert("Нет свободных грядок!");
-        } else alert("Мало Sol!");
-    }
-
-    function harvest(i) {
-        if (state.plots[i]) {
-            state.balance += state.plots[i].sell;
-            state.plots[i] = null;
+        function collect(id) {
+            state.modules[id].val = 0;
+            // Звуковой эффект нажатия
+            const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-click-melodic-tone-1129.mp3');
+            audio.play().catch(() => {});
             render();
-            startDrops();
         }
-    }
 
-    function startDrops() {
-        for(let i=0; i<15; i++) {
-            const d = document.createElement('div');
-            d.className = 'drop';
-            d.innerText = '💧';
-            d.style.left = Math.random() * 100 + 'vw';
-            document.body.appendChild(d);
-            setTimeout(() => d.remove(), 1000);
+        function upgrade(id) {
+            state.modules[id].lvl++;
+            render();
         }
-    }
 
-    render();
-</script>
+        setInterval(() => {
+            Object.values(state.modules).forEach(m => m.val += (0.1 * m.lvl));
+            render();
+        }, 1000);
+        
+        render();
+    </script>
 </body>
 </html>
