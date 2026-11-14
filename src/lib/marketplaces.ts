@@ -67,11 +67,11 @@ export function wbProductUrl(id?: number): string {
 }
 
 export function wbSearchUrl(query: string): string {
-  return `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodeURIComponent(query)}&sort=popular`;
+  return `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodeURIComponent(query)}&sort=popular&fsupplier=585856`;
 }
 
 export function ozonSearchUrl(query: string): string {
-  return `https://www.ozon.ru/search/?text=${encodeURIComponent(query)}&from_global=true`;
+  return `https://www.ozon.ru/seller/boonker-semnaya-tonirovka/products/?text=${encodeURIComponent(query)}`;
 }
 
 /** Прямая карточка WB, если она есть в выгрузке, иначе — поиск по магазину. */
