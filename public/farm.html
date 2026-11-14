@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Boonker Farm — Command Center</title>
+    <style>
+        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .dashboard { width: 400px; padding: 30px; border: 2px solid #00ff41; border-radius: 5px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); }
+        h1 { font-size: 18px; text-align: center; margin-bottom: 30px; letter-spacing: 2px; }
+        .btn { width: 100%; padding: 15px; margin: 10px 0; background: transparent; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; transition: 0.3s; font-family: inherit; font-size: 14px; }
+        .btn:hover { background: #00ff41; color: #000; }
+        #status { text-align: center; margin-top: 20px; font-size: 12px; color: #008800; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>BOONKER • COMMAND CENTER</h1>
+    <div id="status">STATUS: SYSTEM READY</div>
+    
+    <button class="btn" onclick="act('WATERING_SYSTEM')">ACTIVATE: WATERING</button>
+    <button class="btn" onclick="act('GROW_LIGHTS')">ACTIVATE: LIGHTS</button>
+    <button class="btn" onclick="act('VENTILATION')">ACTIVATE: VENTILATION</button>
+</div>
+
+<script>
+    function act(system) {
+        const status = document.getElementById('status');
+        status.innerText = "EXECUTING: " + system + "...";
+        status.classList.add('blink');
+        
+        // Эмуляция задержки
+        setTimeout(() => {
+            status.innerText = "STATUS: " + system + " ACTIVE (LIVE)";
+            status.classList.remove('blink');
+            setTimeout(() => {
+                status.innerText = "STATUS: SYSTEM READY";
+            }, 3000);
+        }, 1500);
+    }
+</script>
+</body>
+</html>
