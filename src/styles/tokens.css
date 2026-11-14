@@ -28,6 +28,9 @@
   --radius-lg: 22px;
   --radius-pill: 999px;
 
+  /* Высота липкой шапки — используется для отступов прокрутки к якорям. */
+  --header-h: 4.25rem;
+
   --color-bg: #08090a;
   --color-surface: #101215;
   --color-surface-2: #16191d;

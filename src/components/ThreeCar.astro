@@ -12,6 +12,7 @@ const { vlt = 15 } = Astro.props;
     Не удалось загрузить 3D-модель. Проверьте, что файл <code>/models/porsche911.glb</code>
     доступен, и попробуйте обновить страницу.
   </p>
+  <p class="three-car__hint" aria-hidden="true">Потяните, чтобы повернуть</p>
 </div>
 
 <script>
@@ -36,7 +37,9 @@ const { vlt = 15 } = Astro.props;
   const TINT: Record<number, { opacity: number; color: number }> = {
     5: { opacity: 0.72, color: 0x050505 },  // самая тёмная
     15: { opacity: 0.52, color: 0x121212 },
+    20: { opacity: 0.44, color: 0x1c1c1c },
     35: { opacity: 0.32, color: 0x404040 },
+    50: { opacity: 0.21, color: 0x747474 },
     70: { opacity: 0.1, color: 0xb0b0b0 },  // самая светлая
   };
 
@@ -112,6 +115,16 @@ const { vlt = 15 } = Astro.props;
     controls.maxDistance = 25;
     controls.maxPolarAngle = Math.PI * 0.48;
     controls.target.set(0, 1.2, 0);
+    controls.enablePan = false;
+    // На телефоне вертикальный свайп листает страницу, горизонтальный — вращает модель.
+    renderer.domElement.style.touchAction = 'pan-y';
+
+    // Перерисовываем сцену только при изменениях: экономит батарею и не греет телефон.
+    let needsRender = true;
+    const requestRender = (): void => {
+      needsRender = true;
+    };
+    controls.addEventListener('change', requestRender);
 
     const loader = new GLTFLoader();
     let disposed = false;
@@ -180,6 +193,7 @@ const { vlt = 15 } = Astro.props;
         applyTint(scene, container.getAttribute('data-three-vlt')
           ? Number(container.getAttribute('data-three-vlt'))
           : 15);
+        requestRender();
       },
       undefined,
       (error: unknown) => {
@@ -193,6 +207,8 @@ const { vlt = 15 } = Astro.props;
     const tick = (): void => {
       if (disposed) return;
       rafId = requestAnimationFrame(tick);
+      if (!needsRender) return;
+      needsRender = false;
       controls.update();
       renderer.render(scene, camera);
     };
@@ -204,6 +220,7 @@ const { vlt = 15 } = Astro.props;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
+      requestRender();
     };
     resize();
     const resizeObserver = new ResizeObserver(resize);
@@ -225,7 +242,10 @@ const { vlt = 15 } = Astro.props;
       container.removeChild(renderer.domElement);
     };
 
-    const setTint = (value: number): void => applyTint(scene, value);
+    const setTint = (value: number): void => {
+      applyTint(scene, value);
+      requestRender();
+    };
 
     (window as unknown as { __threeCar?: CarApi }).__threeCar = { setTint, dispose };
 
@@ -247,12 +267,37 @@ const { vlt = 15 } = Astro.props;
   .three-car {
     position: relative;
     width: 100%;
-    height: 420px;
+    height: clamp(280px, 58vw, 420px);
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid color-mix(in srgb, #00eaff 25%, var(--color-border));
     background: radial-gradient(120% 120% at 50% 0%, #041018 0%, #02060a 55%, #010305 100%);
     box-shadow: 0 0 0 1px rgb(0 234 255 / 0.08) inset;
+  }
+
+  .three-car__hint {
+    position: absolute;
+    left: 50%;
+    bottom: 0.65rem;
+    display: none;
+    margin: 0;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: rgb(2 6 10 / 0.6);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 899px) {
+    .three-car__hint {
+      display: block;
+    }
   }
 
   .three-car__error {

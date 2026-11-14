@@ -21,6 +21,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
     </a>
 
     <nav class="header__nav" id="primary-nav" aria-label="Основная навигация">
+      <p class="header__nav-title">Меню</p>
       {
         nav.map((item) => (
           <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
@@ -28,6 +29,13 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
           </a>
         ))
       }
+      <div class="header__nav-cta">
+        <Button href={site.telegram} variant="primary" external block>Написать в Telegram</Button>
+        <Button href={site.marketplaces.wildberries} variant="secondary" external block>
+          Мы на Wildberries
+        </Button>
+        <Button href={site.marketplaces.ozon} variant="ghost" external block>Мы на Ozon</Button>
+      </div>
     </nav>
 
     <div class="header__actions">
@@ -53,17 +61,30 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
   const header = document.querySelector<HTMLElement>('[data-header]');
   const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
 
-  toggle?.addEventListener('click', () => {
-    const open = header?.toggleAttribute('data-open') ?? false;
+  const setOpen = (open: boolean) => {
+    if (!header || !toggle) return;
+    header.toggleAttribute('data-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+    // На телефоне меню занимает экран — блокируем прокрутку страницы под ним.
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+  };
+
+  toggle?.addEventListener('click', () => {
+    setOpen(!header?.hasAttribute('data-open'));
   });
 
   document.querySelectorAll('#primary-nav a').forEach((link) => {
-    link.addEventListener('click', () => {
-      header?.removeAttribute('data-open');
-      toggle?.setAttribute('aria-expanded', 'false');
-    });
+    link.addEventListener('click', () => setOpen(false));
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+
+  // При переходе на десктопную ширину меню-оверлей больше не нужно.
+  window.matchMedia('(min-width: 901px)').addEventListener('change', (event) => {
+    if (event.matches) setOpen(false);
   });
 </script>
 
@@ -81,7 +102,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
     display: flex;
     align-items: center;
     gap: clamp(1rem, 3vw, 2.5rem);
-    min-height: 4.25rem;
+    min-height: var(--header-h);
   }
 
   .header__logo {
@@ -119,22 +140,30 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
     margin-left: auto;
   }
 
+  .header__nav-title,
+  .header__nav-cta {
+    display: none;
+  }
+
   .nav-burger {
     display: none;
-    width: 2.5rem;
-    height: 2.5rem;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
     background: transparent;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .nav-burger span {
     display: block;
-    width: 1.1rem;
+    width: 1.15rem;
     height: 2px;
-    margin: 0.28rem auto;
+    margin: 0.3rem auto;
     background: var(--color-text);
     transition: transform 160ms ease-out;
   }
@@ -153,7 +182,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
     }
 
     .nav-burger {
-      display: block;
+      display: grid;
     }
 
     .header[data-open] .header__nav {
@@ -162,14 +191,53 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
       display: flex;
       flex-direction: column;
       gap: 0;
-      padding: var(--space-2) var(--space-5) var(--space-5);
-      background: var(--color-surface);
-      border-bottom: 1px solid var(--color-border);
+      height: calc(100dvh - var(--header-h));
+      padding: var(--space-4) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .header[data-open] .header__nav-title {
+      display: block;
+      margin-bottom: var(--space-2);
+      color: var(--color-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     .header[data-open] .header__nav a {
-      padding-block: var(--space-4);
+      display: flex;
+      align-items: center;
+      min-height: 3.25rem;
+      padding-block: var(--space-3);
       border-bottom: 1px solid var(--color-border);
+      color: var(--color-text);
+      font-size: var(--step-1);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .header[data-open] .header__nav a[aria-current='page'] {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    .header[data-open] .header__nav-cta {
+      display: grid;
+      gap: var(--space-2);
+      margin-top: auto;
+      padding-top: var(--space-6);
+    }
+
+    .header[data-open] .header__nav-cta a {
+      justify-content: center;
+      min-height: 3rem;
+      border-bottom: 0;
+      font-size: var(--step-0);
     }
   }
 

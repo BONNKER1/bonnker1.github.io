@@ -598,7 +598,7 @@ const payload = {
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg);
     background:
-      radial-gradient(90% 60% at 100% 0%, rgb(216 255 62 / 0.1) 0%, transparent 60%),
+      radial-gradient(90% 60% at 100% 0%, rgb(224 52 43 / 0.12) 0%, transparent 60%),
       var(--color-surface);
     box-shadow: var(--shadow-md);
   }
@@ -719,6 +719,46 @@ const payload = {
 
     .summary {
       position: static;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .product-head {
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+
+    .config {
+      gap: var(--space-5);
+      padding: var(--space-4);
+    }
+
+    /* Два варианта в ряд — конфигуратор короче и понятнее на телефоне. */
+    .opt-grid--3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .opt {
+      padding: var(--space-3);
+    }
+
+    .opt__meta,
+    .opt__price {
+      font-size: 0.78rem;
+    }
+
+    .vlt {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 3.5rem;
+      min-height: 2.75rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    .summary {
+      padding: var(--space-5);
     }
   }
 </style>

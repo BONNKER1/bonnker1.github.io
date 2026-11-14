@@ -63,10 +63,14 @@ const schemas = [
           <label for="filter-search">Поиск</label>
           <input
             id="filter-search"
-            type="text"
+            type="search"
             data-search
             placeholder="Модель или марка"
             autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            inputmode="search"
+            enterkeyhint="search"
           />
         </div>
 
@@ -236,7 +240,43 @@ const schemas = [
 
   @media (max-width: 760px) {
     .filters {
-      grid-template-columns: 1fr;
+      position: sticky;
+      top: calc(var(--header-h) + 0.25rem);
+      z-index: 20;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      align-items: center;
+      gap: var(--space-2);
+      margin-block: var(--space-6) var(--space-5);
+      padding: var(--space-2);
+      background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Подписи нужны скринридерам, но на телефоне место дороже. */
+    .filters .field label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .filters select,
+    .filters input[type='search'] {
+      padding-inline: 0.65rem;
+      font-size: var(--step--1);
+    }
+
+    .filters__count {
+      grid-column: 1 / -1;
+      font-size: 0.72rem;
+      text-align: center;
+    }
+
+    .catalog-grid {
+      gap: var(--space-3);
     }
   }
 </style>

@@ -121,6 +121,17 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     </div>
   </section>
 
+  <nav class="quick-links" aria-label="Быстрые переходы">
+    <div class="quick-links__track">
+      <a class="quick-links__item quick-links__item--accent" href="/catalog/">Каталог лекал</a>
+      <a class="quick-links__item" href="/tipy-plenki/">Типы плёнки</a>
+      <a class="quick-links__item" href="/plenka-na-otrez/">Плёнка на отрез</a>
+      <a class="quick-links__item" href="/dostavka-i-oplata/">Доставка</a>
+      <a class="quick-links__item" href="/faq/">Вопросы</a>
+      <a class="quick-links__item" href="/kontakty/">Контакты</a>
+    </div>
+  </nav>
+
   <Section
     eyebrow="Ассортимент"
     title="Четыре типа плёнки — под вашу задачу"
@@ -142,15 +153,16 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
   >
     <div class="examples">
       <figure class="examples__item">
-        <img src="/images/examples/example-1.webp" alt="Пример съёмной тонировки на автомобиле — вид сбоку" loading="lazy" width="800" height="600" />
+        <img src="/images/examples/example-1.webp" alt="Пример съёмной тонировки на автомобиле — вид сбоку" loading="lazy" decoding="async" width="800" height="600" />
       </figure>
       <figure class="examples__item">
-        <img src="/images/examples/example-2.webp" alt="Пример тонировки задних стекол по лекалу" loading="lazy" width="800" height="600" />
+        <img src="/images/examples/example-2.webp" alt="Пример тонировки задних стекол по лекалу" loading="lazy" decoding="async" width="800" height="600" />
       </figure>
       <figure class="examples__item">
-        <img src="/images/examples/example-3.webp" alt="Пример установленной съёмной тонировки на стекле" loading="lazy" width="800" height="600" />
+        <img src="/images/examples/example-3.webp" alt="Пример установленной съёмной тонировки на стекле" loading="lazy" decoding="async" width="800" height="600" />
       </figure>
     </div>
+    <p class="examples__hint">Листайте вправо →</p>
   </Section>
 
   <Section
@@ -403,6 +415,45 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     gap: var(--space-2);
   }
 
+  .quick-links {
+    display: none;
+  }
+
+  .quick-links__track {
+    display: flex;
+    gap: var(--space-2);
+    padding-inline: 1.25rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .quick-links__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .quick-links__item {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    font-size: var(--step--1);
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .quick-links__item--accent {
+    border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
   .films-more {
     display: flex;
     flex-wrap: wrap;
@@ -440,6 +491,10 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
     height: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
+  }
+
+  .examples__hint {
+    display: none;
   }
 
   .steps {
@@ -571,22 +626,80 @@ const schemas = [organizationSchema(), websiteSchema(), faqSchema(faq)];
       grid-template-columns: 1fr;
     }
 
-    .hero__visual {
-      order: -1;
-    }
-
     .examples {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
+  @media (max-width: 900px) {
+    .quick-links {
+      display: block;
+      padding-block: var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface);
+    }
+  }
+
   @media (max-width: 640px) {
-    .hero__stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .hero {
+      padding-block: var(--space-8) var(--space-10);
     }
 
+    .hero__copy {
+      gap: var(--space-5);
+    }
+
+    .hero__stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .hero__panel {
+      gap: var(--space-2);
+      padding: var(--space-3);
+    }
+
+    .hero__vlt-btn {
+      flex: 1;
+      min-height: 2.75rem;
+      font-size: var(--step-0);
+    }
+
+    .hero__panel-scale {
+      font-size: 0.8rem;
+    }
+
+    /* Галерея листается пальцем, карточки «прилипают» к краю экрана. */
     .examples {
-      grid-template-columns: 1fr;
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: min(78vw, 22rem);
+      gap: var(--space-3);
+      margin-inline: -1.25rem;
+      padding-inline: 1.25rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: 1.25rem;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .examples::-webkit-scrollbar {
+      display: none;
+    }
+
+    .examples__item {
+      scroll-snap-align: start;
+    }
+
+    .examples__hint {
+      display: block;
+      margin-top: var(--space-3);
+      color: var(--color-muted);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
   }
 </style>
