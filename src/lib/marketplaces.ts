@@ -2,9 +2,64 @@ import type { CarBrand, CarModel } from '../data/cars';
 import { films } from '../data/films';
 import { site } from '../data/site';
 
-/** Название авто для поиска на маркетплейсе: «Toyota Camry». */
+/** Название авто для текстов и метаданных: «Toyota Camry». */
 export function modelLabel(brand: CarBrand, model: CarModel): string {
   return `${brand.name.replace(/\s*\([^)]*\)/, '')} ${model.name}`;
+}
+
+const GENERATION_WITH_NUMBER =
+  /(?:^|[\s,(])(?:\d{1,2}|I{1,3}|IV|V|VI{0,3}|IX|X)\s*[-–—]?\s*(?:е\s+)?поколени[ея](?=[\s,)]|$)/gi;
+
+/**
+ * Служебные слова каталога лекал, которых нет в названиях товаров на маркетплейсах.
+ * Если оставить их в запросе, поиск выдаёт коврики и запчасти вместо тонировки.
+ * В JS `\b` и `\w` не работают с кириллицей, поэтому границы — через `[\s,]`.
+ */
+const SEARCH_NOISE: RegExp[] = [
+  // «2 поколение», «10-е поколение», «II поколение», «5 пок.», «1пок»
+  GENERATION_WITH_NUMBER,
+  /(?:^|[\s,(])\d{1,2}\s*(?:х\s*)?пок(?:оление)?\.?(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(\d])пок(?:оление)?\.?(?=[\s,)]|$)/gi,
+  // «2х дверный», «5 дверей», «3 дв.», «4 д»
+  /(?:^|[\s,(])\d{1,2}\s*(?:х\s*)?(?:дв\.?|двери|дверей|дверн[а-яё]*|д)(?=[\s,)]|$)/gi,
+  // «3d», «купе», «седан»…
+  /(?:^|[\s,(])(?:3d|5d|coupe|купе|седан|хэтчбек|хетчбек|универсал|пикап|кабриолет|минивэн|кроссовер|внедорожник|лифтбек)(?=[\s,)]|$)/gi,
+  // «с форточкой», «без форточки», «форточка»
+  /(?:^|[\s,(])(?:с|со)\s+форточк[а-яё]*(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])без\s+форточк[а-яё]*(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])форточк[а-яё]*(?=[\s,)]|$)/gi,
+  // «до рестайлинга», «рестайлинг»
+  /(?:^|[\s,(])(?:до|после)\s+рестайлинг[а-яё]*(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])рестайлинг[а-яё]*(?=[\s,)]|$)/gi,
+  // «он же», «кузов», «стекло», одиночное «и»
+  /(?:^|[\s,(])(?:он|она|они)\s+же(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])кузов[а-яё]*(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])стекл[а-яё]*(?=[\s,)]|$)/gi,
+  /(?:^|[\s,(])и(?=[\s,)]|$)/g,
+];
+
+/**
+ * Короткое название для поиска на маркетплейсе: «Volvo XC70 2 поколение» → «Volvo XC70».
+ * Поколение, кузов и число дверей есть в каталоге лекал, но не в названиях товаров на WB/Ozon,
+ * поэтому в запросе они только мешают.
+ */
+export function searchLabel(brand: CarBrand, model: CarModel): string {
+  const brandName = brand.name.replace(/\s*\([^)]*\)/, '');
+  let name = model.name.normalize('NFC').replace(GENERATION_WITH_NUMBER, ' ');
+  for (const re of SEARCH_NOISE) name = name.replace(re, ' ');
+  name = name
+    .replace(/[\u200b-\u200f\u202a-\u202e\ufeff]/g, '')
+    .replace(/\(\s*\)/g, ' ')
+    .replace(/\s+([,)])/g, '$1')
+    .replace(/([,(])\s+/g, '$1')
+    .replace(/[,\-–—\s]+/g, ' ')
+    .trim();
+  return `${brandName} ${name || model.name}`.replace(/\s+/g, ' ').trim();
+}
+
+/** Поисковый запрос, по которому находятся именно комплекты тонировки. */
+export function searchQuery(brand: CarBrand, model: CarModel): string {
+  return `тонировка ${searchLabel(brand, model)}`;
 }
 
 export function wbProductUrl(id?: number): string {
@@ -12,11 +67,11 @@ export function wbProductUrl(id?: number): string {
 }
 
 export function wbSearchUrl(query: string): string {
-  return `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodeURIComponent(query)}`;
+  return `https://www.wildberries.ru/catalog/0/search.aspx?search=${encodeURIComponent(query)}&sort=popular`;
 }
 
 export function ozonSearchUrl(query: string): string {
-  return `https://www.ozon.ru/search/?text=${encodeURIComponent(query)}`;
+  return `https://www.ozon.ru/search/?text=${encodeURIComponent(query)}&from_global=true`;
 }
 
 /** Прямая карточка WB, если она есть в выгрузке, иначе — поиск по магазину. */
@@ -28,7 +83,7 @@ export function modelWbLink(brand: CarBrand, model: CarModel): { href: string; e
     model.wb?.hard;
   return id
     ? { href: wbProductUrl(id), exact: true }
-    : { href: wbSearchUrl(modelLabel(brand, model)), exact: false };
+    : { href: wbSearchUrl(searchQuery(brand, model)), exact: false };
 }
 
 /** Прямая карточка Ozon (любой комплект), иначе — поиск по магазину. */
@@ -41,5 +96,5 @@ export function modelOzonLink(brand: CarBrand, model: CarModel): { href: string;
       if (offer?.id) return { href: `https://www.ozon.ru/product/${offer.id}/`, exact: true };
     }
   }
-  return { href: ozonSearchUrl(modelLabel(brand, model)), exact: false };
+  return { href: ozonSearchUrl(searchQuery(brand, model)), exact: false };
 }

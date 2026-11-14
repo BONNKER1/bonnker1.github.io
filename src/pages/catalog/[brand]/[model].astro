@@ -17,6 +17,7 @@ import {
   modelOzonLink,
   modelWbLink,
   ozonSearchUrl,
+  searchQuery,
   wbSearchUrl,
 } from '../../../lib/marketplaces';
 import { breadcrumbsSchema, faqSchema, productSchema } from '../../../lib/schema';
@@ -46,6 +47,7 @@ const frontSet = filmSets.find((set) => set.id === 'front')!;
 const hasWindshield = brand.slug === 'lada';
 
 const autoLabel = modelLabel(brand, model);
+const marketplaceQuery = searchQuery(brand, model);
 
 // Прямая карточка, если она есть в выгрузке; иначе — поиск по магазину.
 const wbLink = modelWbLink(brand, model);
@@ -108,9 +110,9 @@ const payload = {
   windshield: hasWindshield ? windshieldSet : null,
   telegram: site.telegram,
   wb: model.wb ?? {},
-  wbFallback: wbSearchUrl(autoLabel),
+  wbFallback: wbSearchUrl(marketplaceQuery),
   ozon: model.ozon ?? {},
-  ozonFallback: ozonSearchUrl(autoLabel),
+  ozonFallback: ozonSearchUrl(marketplaceQuery),
 };
 ---
 <BaseLayout
@@ -407,7 +409,7 @@ const payload = {
       wbNote.hidden = Boolean(id);
       if (!id) {
         wbNote.textContent =
-          'Точного артикула для этой модели нет — откроем поиск по магазину. Или закажите в Telegram.';
+          'Точного артикула для этой модели нет — откроем поиск на Wildberries. Или закажите в Telegram.';
       }
     }
 
@@ -424,7 +426,7 @@ const payload = {
       ozonNote.hidden = Boolean(offer);
       if (!offer) {
         ozonNote.textContent =
-          'Точного артикула для этого комплекта нет — откроем поиск по магазину. Или закажите в Telegram.';
+          'Точного артикула для этого комплекта нет — откроем поиск на Ozon. Или закажите в Telegram.';
       }
     }
 

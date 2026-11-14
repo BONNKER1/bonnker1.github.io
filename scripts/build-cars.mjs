@@ -564,12 +564,16 @@ function smartCase(name) {
   return name
     .split(' ')
     .map((word) => (/^[A-Z]{4,}$/.test(word) ? word[0] + word.slice(1).toLowerCase() : word))
-    .join(' ');
+    .join(' ')
+    .replace(/\b([a-zа-я])(?=\d)/g, (char) => char.toUpperCase())
+    .replace(/^([a-zа-я])(?=[a-zа-я])/, (char) => char.toUpperCase());
 }
 
 /** Приводим пунктуацию и пробелы в названии к аккуратному виду. */
 function tidyName(name) {
   return name
+    .normalize('NFC')
+    .replace(/[\u200b-\u200f\u202a-\u202e\ufeff]/g, '')
     .replace(/(?:\s*,\s*)+/g, ', ')
     .replace(/\s+([,.;])/g, '$1')
     .replace(/\s+[-–—]\s+/g, ' ')
