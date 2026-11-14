@@ -2,292 +2,70 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boonker Bio-System</title>
+    <title>Boonker Bio-System Pro</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
-        
-        :root {
-            --bg: #f8f9fa;
-            --primary: #51cf66;
-            --secondary: #339af0;
-            --gold: #fcc419;
-            --dark: #212529;
-            --card-bg: #ffffff;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--dark);
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        /* Header / Stats */
-        .top-bar {
-            width: 100%;
-            background: var(--dark);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-around;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .stat-item { text-align: center; }
-        .stat-val { font-weight: bold; color: var(--gold); font-size: 1.2em; }
-        .stat-label { font-size: 0.7em; text-transform: uppercase; opacity: 0.7; }
-
-        /* Main Grid */
-        .container {
-            max-width: 1000px;
-            width: 100%;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        /* Module Card */
-        .module-card {
-            background: var(--card-bg);
-            border-radius: 25px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .module-card:hover { transform: translateY(-10px); }
-
-        .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .module-icon { font-size: 3rem; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); }
-
-        .progress-container {
-            height: 12px;
-            background: #e9ecef;
-            border-radius: 6px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), #b2f2bb);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        /* Buttons */
-        .btn-action {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-        }
-
-        .btn-collect { background: var(--primary); color: white; }
-        .btn-collect:hover { background: #40c057; }
-        .btn-upgrade { background: var(--secondary); color: white; }
-        .btn-live { background: var(--dark); color: white; margin-top: 5px; font-size: 0.7em; }
-
-        /* Animations */
-        .float { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
-        .lvl-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--gold);
-            color: var(--dark);
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--dark);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: none;
-            z-index: 2000;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
+        body { background: #050505; color: #e0e0e0; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .module { padding: 20px; border-radius: 12px; background: #1a1a1a; transition: 0.3s; cursor: pointer; text-align: center; border: 1px solid #333; }
+        .module:hover { border: 1px solid #82c91e; box-shadow: 0 0 15px rgba(130, 201, 30, 0.2); }
+        .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        .btn-up { margin-top: 10px; background: #82c91e; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div class="top-bar">
-        <div class="stat-item">
-            <div class="stat-val" id="total-sol">500</div>
-            <div class="stat-label">SOL (Balance)</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-val" id="total-lvl">3</div>
-            <div class="stat-label">System Level</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- AGRO MODULE -->
-        <div class="module-card">
-            <div class="lvl-badge">LVL <span id="agro-lvl">1</span></div>
-            <div class="module-header">
-                <div class="module-icon float">🌿</div>
-                <div>
-                    <h2 style="margin:0">AGRO-UNIT</h2>
-                    <small>Выращивание культур</small>
-                </div>
-            </div>
-            <div class="progress-container">
-                <div id="agro-progress" class="progress-bar"></div>
-            </div>
-            <button class="btn-action btn-collect" onclick="collect('agro')">Собрать урожай</button>
-            <button class="btn-action btn-upgrade" onclick="upgrade('agro')">Улучшить (100 SOL)</button>
-            <button class="btn-action btn-live" onclick="alert('LIVE CAM: Сигнал отсутствует. Подключите реальное оборудование.')">📽 LIVE STREAM</button>
-        </div>
-
-        <!-- APIARY MODULE -->
-        <div class="module-card">
-            <div class="lvl-badge">LVL <span id="api-lvl">1</span></div>
-            <div class="module-header">
-                <div class="module-icon float" style="animation-delay: 0.5s">🐝</div>
-                <div>
-                    <h2 style="margin:0">APIARY</h2>
-                    <small>Производство меда</small>
-                </div>
-            </div>
-            <div class="progress-container">
-                <div id="api-progress" class="progress-bar" style="background: linear-gradient(90deg, #fab005, #fff3bf)"></div>
-            </div>
-            <button class="btn-action btn-collect" onclick="collect('api')">Собрать мед</button>
-            <button class="btn-action btn-upgrade" onclick="upgrade('api')">Улучшить (150 SOL)</button>
-            <button class="btn-action btn-live" onclick="alert('LIVE CAM: Ожидание подключения улья...')">📽 LIVE STREAM</button>
-        </div>
-
-        <!-- AQUACULTURE MODULE -->
-        <div class="module-card">
-            <div class="lvl-badge">LVL <span id="aqua-lvl">1</span></div>
-            <div class="module-header">
-                <div class="module-icon float" style="animation-delay: 1s">🐟</div>
-                <div>
-                    <h2 style="margin:0">AQUA-SYSTEM</h2>
-                    <small>Разведение рыбы</small>
-                </div>
-            </div>
-            <div class="progress-container">
-                <div id="aqua-progress" class="progress-bar" style="background: linear-gradient(90deg, #228be6, #a5d8ff)"></div>
-            </div>
-            <button class="btn-action btn-collect" onclick="collect('aqua')">Собрать рыбу</button>
-            <button class="btn-action btn-upgrade" onclick="upgrade('aqua')">Улучшить (200 SOL)</button>
-            <button class="btn-action btn-live" onclick="alert('LIVE CAM: Камера в бассейне №1...')">📽 LIVE STREAM</button>
-        </div>
-    </div>
-
-    <div id="toast"></div>
+    <h1 style="color: #82c91e;">BOONKER • LIVE FARM</h1>
+    <div id="app"></div>
 
     <script>
-        let state = {
-            sol: 500,
-            modules: {
-                agro: { lvl: 1, progress: 0, speed: 2, price: 50 },
-                api: { lvl: 1, progress: 0, speed: 1.5, price: 80 },
-                aqua: { lvl: 1, progress: 0, speed: 1, price: 120 }
-            }
+        const state = {
+            sol: 1000,
+            units: [
+                { id: 'cow', name: 'Корова', icon: '🐄', lvl: 1, val: 0, sell: 100 },
+                { id: 'sheep', name: 'Баран', icon: '🐏', lvl: 1, val: 0, sell: 80 },
+                { id: 'chicken', name: 'Курица', icon: '🐓', lvl: 1, val: 0, sell: 30 },
+                { id: 'quail', name: 'Перепелка', icon: '🐦', lvl: 1, val: 0, sell: 40 },
+                { id: 'goose', name: 'Гусь', icon: '🦢', lvl: 1, val: 0, sell: 60 }
+            ]
         };
-
-        const sounds = {
-            collect: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-click-1112.mp3'),
-            upgrade: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3'),
-            error: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3')
-        };
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 2000);
-        }
-
-        function collect(id) {
-            const m = state.modules[id];
-            if (m.progress >= 100) {
-                state.sol += m.price * m.lvl;
-                m.progress = 0;
-                sounds.collect.play().catch(() => {});
-                showToast(`+${m.price * m.lvl} SOL собрано!`);
-                render();
-            } else {
-                sounds.error.play().catch(() => {});
-                showToast("Еще не созрело!");
-            }
-        }
-
-        function upgrade(id) {
-            const cost = 100 * state.modules[id].lvl;
-            if (state.sol >= cost) {
-                state.sol -= cost;
-                state.modules[id].lvl++;
-                state.modules[id].speed *= 1.2;
-                sounds.upgrade.play().catch(() => {});
-                showToast(`Уровень ${id} повышен!`);
-                render();
-            } else {
-                sounds.error.play().catch(() => {});
-                showToast("Недостаточно SOL!");
-            }
-        }
 
         function render() {
-            document.getElementById('total-sol').innerText = Math.floor(state.sol);
-            document.getElementById('total-lvl').innerText = state.modules.agro.lvl + state.modules.api.lvl + state.modules.aqua.lvl - 2;
-            
-            for (let id in state.modules) {
-                const m = state.modules[id];
-                document.getElementById(`${id}-lvl`).innerText = m.lvl;
-                document.getElementById(`${id}-progress`).style.width = m.progress + '%';
+            document.getElementById('app').innerHTML = `
+                <div class="glass"><h2>Баланс: ${Math.floor(state.sol)} SOL</h2></div>
+                <div class="grid">
+                    ${state.units.map((u, i) => `
+                        <div class="module" onclick="collect(${i})">
+                            <div class="icon">${u.icon}</div>
+                            <h3>${u.name} (Lvl ${u.lvl})</h3>
+                            <p>Продукт: ${Math.floor(u.val)}</p>
+                            <button class="btn-up" onclick="event.stopPropagation(); upgrade(${i})">Улучшить</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function collect(i) {
+            state.sol += state.units[i].val * state.units[i].sell;
+            state.units[i].val = 0;
+            render();
+        }
+
+        function upgrade(i) {
+            const cost = 200 * state.units[i].lvl;
+            if (state.sol >= cost) {
+                state.sol -= cost;
+                state.units[i].lvl++;
+                render();
             }
         }
 
-        // Game Loop
         setInterval(() => {
-            for (let id in state.modules) {
-                const m = state.modules[id];
-                if (m.progress < 100) {
-                    m.progress += m.speed;
-                    if (m.progress > 100) m.progress = 100;
-                }
-            }
+            state.units.forEach(u => u.val += (0.05 * u.lvl));
             render();
         }, 1000);
-
+        
         render();
     </script>
 </body>
