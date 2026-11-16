@@ -124,6 +124,24 @@ const EXTRACT = `(() => {
   return [...seen.values()];
 })()`;
 
+/**
+ * Каталог магазина WB отдаётся постранично и каждый раз по-разному, поэтому
+ * накапливаем товары в одном файле: новые добавляются, старые не теряются.
+ */
+function mergeInto(file, products) {
+  const target = path.resolve(file);
+  const merged = new Map();
+  if (fs.existsSync(target)) {
+    try {
+      for (const p of JSON.parse(fs.readFileSync(target, 'utf8'))) merged.set(Number(p.id), p);
+    } catch {}
+  }
+  for (const p of products) merged.set(Number(p.id), p);
+  const all = [...merged.values()];
+  fs.writeFileSync(target, JSON.stringify(all, null, 2), 'utf8');
+  return all.length;
+}
+
 async function main() {
   const child = launch();
   let cdp;
@@ -183,7 +201,7 @@ async function main() {
         const json = await res.json();
         const products = json?.data?.products || json?.products || [];
         if (!products.length) break;
-        for (const p of products) out.push({ id: p.id, name: p.name, brand: p.brand, price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null, feedbacks: p.feedbacks ?? null, rating: p.reviewRating ?? null });
+        for (const p of products) out.push({ id: p.id, name: p.name, brand: p.brand, price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null, feedbacks: p.feedbacks ?? null, rating: p.reviewRating ?? null, sizes: (p.sizes || []).map((s) => ({ name: s.name, price: s.price?.total ?? null, quantity: s.quantity ?? null })) });
         if (products.length < 30) break;
       }
       return { pages: 'ok', items: out };
@@ -204,6 +222,10 @@ async function main() {
         const body = await cdp.send('Network.getResponseBody', { requestId: r.requestId }, r.sessionId);
         const json = JSON.parse(body.body);
         const products = json?.data?.products || json?.products || [];
+        if (!products.length) continue;
+        if (!fs.existsSync('import/wb-raw-sample.json')) {
+          fs.writeFileSync('import/wb-raw-sample.json', JSON.stringify(products[0], null, 1), 'utf8');
+        }
         for (const p of products) {
           raw.push({
             id: p.id,
@@ -213,6 +235,7 @@ async function main() {
             price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null,
             feedbacks: p.feedbacks ?? null,
             rating: p.reviewRating ?? p.rating ?? null,
+            sizes: (p.sizes || []).map((s) => ({ name: s.name, price: s.price?.total ?? null, quantity: s.quantity ?? null })),
           });
         }
       } catch {}
@@ -221,8 +244,7 @@ async function main() {
     console.log('из JSON-ответов:', uniq.length);
     if (uniq.length) {
       fs.mkdirSync(path.resolve('import/raw'), { recursive: true });
-      fs.writeFileSync(path.resolve('import/wb-api.json'), JSON.stringify(uniq, null, 2), 'utf8');
-      console.log('сохранено: import/wb-api.json');
+      console.log('накоплено в import/wb-api.json:', mergeInto('import/wb-api.json', uniq));
     }
 
     const items = await evaluate(cdp, sessionId, EXTRACT);
@@ -232,8 +254,7 @@ async function main() {
 
     fs.mkdirSync(path.dirname(OUT), { recursive: true });
     if (api?.items?.length) {
-      fs.writeFileSync(path.resolve('import/wb-api.json'), JSON.stringify(api.items, null, 2), 'utf8');
-      console.log('API сохранено: import/wb-api.json');
+      console.log('накоплено в import/wb-api.json:', mergeInto('import/wb-api.json', api.items));
     }
     fs.writeFileSync(OUT, JSON.stringify(items, null, 2), 'utf8');
     console.log('сохранено:', OUT);

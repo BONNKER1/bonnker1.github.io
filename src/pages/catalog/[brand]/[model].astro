@@ -414,28 +414,43 @@ const payload = {
       wbButton.textContent = id ? 'Купить на Wildberries' : 'Найти на Wildberries';
     }
     if (wbNote) {
-      wbNote.hidden = Boolean(id);
-      if (!id) {
-        wbNote.textContent =
-          'Точного артикула для этой модели нет — откроем поиск на Wildberries. Или закажите в Telegram.';
-      }
+      wbNote.hidden = false;
+      wbNote.textContent = id
+        ? 'На Wildberries в карточке товара выберите свой вариант затемнения (5 / 15 / 35 / 50%) и комплект стёкол.'
+        : 'Точного артикула для этой модели нет — откроем поиск в нашем магазине на Wildberries. Или закажите в Telegram.';
     }
 
     // Ozon: конкретный комплект выбранной плёнки + вариант по светопропусканию.
     const place = (windshield ? 'windshield' : set!.id) as 'front' | 'rear' | 'full' | 'windshield';
     const offer = data.ozon[film.id]?.[place];
-    const ozonId = offer?.vlt?.[String(vlt)] ?? offer?.id;
+    // Если нужного комплекта нет, но эта плёнка есть в другом — всё равно ведём в карточку
+    // товара и предупреждаем, какой комплект там в наличии.
+    const otherPlace = offer
+      ? null
+      : (['front', 'full', 'rear', 'windshield'] as const).find(
+          (item) => item !== place && data.ozon[film.id]?.[item],
+        );
+    const fallbackOffer = otherPlace ? data.ozon[film.id]?.[otherPlace] : undefined;
+    const ozonId = offer?.vlt?.[String(vlt)] ?? offer?.id ?? fallbackOffer?.vlt?.[String(vlt)] ?? fallbackOffer?.id;
     const ozonSearch = windshield ? data.ozonWindshieldFallback : data.ozonFallback;
+    const setNames: Record<string, string> = {
+      front: 'передние полусферы',
+      rear: 'задние полусферы',
+      full: 'полный комплект',
+      windshield: 'лобовое стекло',
+    };
     if (ozonButton) {
       ozonButton.style.display = '';
-      ozonButton.href = offer ? `https://www.ozon.ru/product/${ozonId}/` : ozonSearch;
-      ozonButton.textContent = offer ? 'Купить на Ozon' : 'Найти на Ozon';
+      ozonButton.href = ozonId ? `https://www.ozon.ru/product/${ozonId}/` : ozonSearch;
+      ozonButton.textContent = ozonId ? 'Купить на Ozon' : 'Найти на Ozon';
     }
     if (ozonNote) {
-      ozonNote.hidden = Boolean(offer);
-      if (!offer) {
+      ozonNote.hidden = Boolean(ozonId);
+      if (!ozonId) {
         ozonNote.textContent =
-          'Точного артикула для этого комплекта нет — откроем поиск на Ozon. Или закажите в Telegram.';
+          'Точного артикула для этого комплекта нет — откроем поиск в нашем магазине на Ozon. Или закажите в Telegram.';
+      } else if (otherPlace) {
+        ozonNote.textContent = `На Ozon эта плёнка продаётся только комплектом «${setNames[otherPlace]}» — открыли его карточку.`;
       }
     }
 

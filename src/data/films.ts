@@ -90,7 +90,8 @@ export const filmByMeter = {
   unit: 'погонный метр',
 } as const;
 
-export const vltOptions = [5, 15, 20, 35, 50, 70] as const;
+/** Светопропускание, которое есть в наличии: 5 / 15 / 35 / 50 %. */
+export const vltOptions = [5, 15, 35, 50] as const;
 
 export function priceFor(film: Film, set: FilmSet | WindshieldSet): number {
   if (set.id === 'windshield') return set.price;
