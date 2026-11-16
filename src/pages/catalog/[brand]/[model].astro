@@ -16,10 +16,12 @@ import {
   modelLabel,
   modelOzonLink,
   modelWbLink,
+  ozonSearchQuery,
   ozonSearchUrl,
-  searchLabel,
-  searchQuery,
+  ozonWindshieldSearchQuery,
+  wbSearchQuery,
   wbSearchUrl,
+  wbWindshieldSearchQuery,
 } from '../../../lib/marketplaces';
 import { breadcrumbsSchema, faqSchema, productSchema } from '../../../lib/schema';
 
@@ -48,10 +50,10 @@ const frontSet = filmSets.find((set) => set.id === 'front')!;
 const hasWindshield = brand.slug === 'lada';
 
 const autoLabel = modelLabel(brand, model);
-const marketplaceQuery = searchQuery(brand, model);
-const windshieldQuery = `тонировка лобовое стекло ${searchLabel(brand, model)}${
-  model.years ? ` ${model.years.replace(/[–—]/g, '-')}` : ''
-}`;
+const wbQuery = wbSearchQuery(brand, model);
+const ozonQuery = ozonSearchQuery(brand, model);
+const wbWindshieldQuery = wbWindshieldSearchQuery(brand, model);
+const ozonWindshieldQuery = ozonWindshieldSearchQuery(brand, model);
 
 // Прямая карточка, если она есть в выгрузке; иначе — поиск по магазину.
 const wbLink = modelWbLink(brand, model);
@@ -115,11 +117,11 @@ const payload = {
   telegram: site.telegram,
   wb: model.wb ?? {},
   wbVlt: model.wbVlt ?? {},
-  wbFallback: wbSearchUrl(marketplaceQuery),
-  wbWindshieldFallback: wbSearchUrl(windshieldQuery),
+  wbFallback: wbSearchUrl(wbQuery),
+  wbWindshieldFallback: wbSearchUrl(wbWindshieldQuery),
   ozon: model.ozon ?? {},
-  ozonFallback: ozonSearchUrl(marketplaceQuery),
-  ozonWindshieldFallback: ozonSearchUrl(windshieldQuery),
+  ozonFallback: ozonSearchUrl(ozonQuery),
+  ozonWindshieldFallback: ozonSearchUrl(ozonWindshieldQuery),
 };
 ---
 <BaseLayout

@@ -59,12 +59,42 @@ export function searchLabel(brand: CarBrand, model: CarModel): string {
 
 /**
  * Поисковый запрос, по которому находятся именно комплекты тонировки.
- * Годы добавляем, чтобы в выдаче магазина было нужное поколение автомобиля.
+ * Если знаем название нашей карточки — берём его: маркетплейс найдёт именно её.
+ * Годы добавляем, только когда такая карточка в магазине действительно есть.
  */
-export function searchQuery(brand: CarBrand, model: CarModel): string {
+export function searchQuery(
+  brand: CarBrand,
+  model: CarModel,
+  phrase?: string,
+): string {
+  if (phrase) return `тонировка ${phrase}`;
   const base = `тонировка ${searchLabel(brand, model)}`;
-  const years = model.years?.replace(/[–—]/g, '-').trim();
+  const years = (model.searchYears ?? '').trim();
   return years ? `${base} ${years}` : base;
+}
+
+/** Запрос для поиска по нашему магазину на Wildberries. */
+export function wbSearchQuery(brand: CarBrand, model: CarModel): string {
+  return searchQuery(brand, model, model.wbPhrase);
+}
+
+/** Запрос для поиска лобового стекла на Wildberries. */
+export function wbWindshieldSearchQuery(brand: CarBrand, model: CarModel): string {
+  if (model.wbWindshieldPhrase) return `тонировка ${model.wbWindshieldPhrase}`;
+  const years = (model.searchYears ?? '').trim();
+  return `тонировка лобовое стекло ${searchLabel(brand, model)}${years ? ` ${years}` : ''}`;
+}
+
+/** Запрос для поиска по нашему магазину на Ozon. */
+export function ozonSearchQuery(brand: CarBrand, model: CarModel): string {
+  return searchQuery(brand, model, model.ozonPhrase);
+}
+
+/** Запрос для поиска лобового стекла на Ozon. */
+export function ozonWindshieldSearchQuery(brand: CarBrand, model: CarModel): string {
+  if (model.ozonWindshieldPhrase) return `тонировка ${model.ozonWindshieldPhrase}`;
+  const years = (model.searchYears ?? '').trim();
+  return `тонировка лобовое стекло ${searchLabel(brand, model)}${years ? ` ${years}` : ''}`;
 }
 
 export function wbProductUrl(id?: number): string {
@@ -88,7 +118,7 @@ export function modelWbLink(brand: CarBrand, model: CarModel): { href: string; e
     model.wb?.hard;
   return id
     ? { href: wbProductUrl(id), exact: true }
-    : { href: wbSearchUrl(searchQuery(brand, model)), exact: false };
+    : { href: wbSearchUrl(wbSearchQuery(brand, model)), exact: false };
 }
 
 /** Прямая карточка Ozon (любой комплект), иначе — поиск по магазину. */
@@ -101,5 +131,5 @@ export function modelOzonLink(brand: CarBrand, model: CarModel): { href: string;
       if (offer?.id) return { href: `https://www.ozon.ru/product/${offer.id}/`, exact: true };
     }
   }
-  return { href: ozonSearchUrl(searchQuery(brand, model)), exact: false };
+  return { href: ozonSearchUrl(ozonSearchQuery(brand, model)), exact: false };
 }

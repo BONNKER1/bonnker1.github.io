@@ -241,6 +241,9 @@ const entries = new Map(); // `${brandSlug}/${modelSlug}` -> {brandSlug, name, y
 const skipped = [];
 const ozonSkipped = [];
 const ozonPending = [];
+// Годы товаров магазина по «ядру» названия: нужны, чтобы поисковый запрос
+// не требовал от карточки лишних слов (тогда маркетплейс ничего не находит).
+const storeYears = new Map();
 
 function detectMake(rest) {
   const lower = rest.toLowerCase();
@@ -278,6 +281,8 @@ function attachOzon(entry, product) {
   const prev = byFilm[place];
   if (!prev) {
     byFilm[place] = { id: Number(product.id), vlt };
+    if (place === 'windshield') entry.ozonWindshieldPhrase = storePhrase(product.name);
+    else entry.ozonPhrase = storePhrase(product.name);
     return;
   }
   const nextCount = Object.keys(vlt).length;
@@ -425,6 +430,7 @@ for (const product of data) {
     slug = slugify(display);
   }
   const key = `${make.slug}/${slug}`;
+  noteStoreYears(make.slug, display, years);
   // Ozon-товары прикрепляем позже: сначала собираем базу лекал, чтобы понимать,
   // к какой модели (с учётом поколения и годов) относится товар.
   if (product.source === 'ozon') {
@@ -469,6 +475,8 @@ for (const product of data) {
   const current = entry.wb[kind];
   if (!current || feedbacks > current.feedbacks) {
     entry.wb[kind] = { id: Number(product.id), feedbacks };
+    if (kind === 'windshield') entry.wbWindshieldPhrase = storePhrase(product.name);
+    else entry.wbPhrase = storePhrase(product.name);
   }
 
   // Процент затемнения этой карточки (если знаем) — по нему открываем точный вариант.
@@ -790,6 +798,51 @@ function modelTokens(name) {
   return normName(name).split(' ').filter(Boolean);
 }
 
+/** «Ядро» названия: первая группа слов — по ней ищем модель в базе. */
+function coreOf(name) {
+  return String(name ?? '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[^a-zа-я0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)[0] ?? '';
+}
+
+/** Диапазон лет в виде «2006-2011» — для сравнения строк. */
+function normRange(text) {
+  if (!text) return '';
+  const range = text.match(/(\d{4})\D+(\d{4})/);
+  if (range) return `${range[1]}-${range[2]}`;
+  const open = text.match(/(\d{4})\D*н\.?\s?в\.?/i);
+  if (open) return `${open[1]}-н.в.`;
+  const one = text.match(/(\d{4})/);
+  return one ? `${one[1]}-${one[1]}` : '';
+}
+
+/** Запоминаем, какие годы встречаются в товарах магазина для этого «ядра» названия. */
+function noteStoreYears(brandSlug, display, years) {
+  if (!years) return;
+  const key = `${brandSlug}|${coreOf(display)}`;
+  const set = storeYears.get(key) ?? new Set();
+  set.add(normRange(years));
+  storeYears.set(key, set);
+}
+
+/**
+ * Название нашей карточки без слов про тип плёнки — из него получается точный
+ * поисковый запрос: маркетплейс найдёт именно наш товар, а не чужие коврики.
+ */
+function storePhrase(name) {
+  return String(name ?? '')
+    .replace(
+      /^\s*(?:съёмная|съемная|классическая|атермальная|жёсткая|жесткая)?\s*(?:многоразовая)?\s*(?:силиконовая)?\s*тонировк[а-яёa-z]*\s*/i,
+      '',
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
  * Модель сайта для карточки товара: «Camry» → «Camry XV40», «XC70» → «XC70 3 поколение».
  * Сравниваем первые слова названия и годы; если подходит несколько моделей — не гадаем.
@@ -831,6 +884,14 @@ function linksCount(entry) {
 
 /** Переносим ссылки с одной модели на другую. */
 function mergeLinks(target, source) {
+  if (!target.wbPhrase && source.wbPhrase) target.wbPhrase = source.wbPhrase;
+  if (!target.wbWindshieldPhrase && source.wbWindshieldPhrase) {
+    target.wbWindshieldPhrase = source.wbWindshieldPhrase;
+  }
+  if (!target.ozonPhrase && source.ozonPhrase) target.ozonPhrase = source.ozonPhrase;
+  if (!target.ozonWindshieldPhrase && source.ozonWindshieldPhrase) {
+    target.ozonWindshieldPhrase = source.ozonWindshieldPhrase;
+  }
   for (const [kind, data] of Object.entries(source.wb ?? {})) {
     const current = target.wb[kind];
     if (!current || (data.feedbacks ?? 0) > current.feedbacks) target.wb[kind] = data;
@@ -903,6 +964,16 @@ for (const item of ozonPending) {
   }
   attachOzon(entry, item.product);
   ozonAttached += 1;
+}
+
+// Годы для поискового запроса: добавляем только если в нашем магазине действительно
+// есть карточка с такими годами — иначе маркетплейс не найдёт ничего.
+for (const entry of entries.values()) {
+  const ranges = storeYears.get(`${entry.brandSlug}|${coreOf(entry.name)}`);
+  entry.searchYears =
+    entry.years && ranges && ranges.has(normRange(entry.years))
+      ? entry.years.replace(/[–—]/g, '-')
+      : '';
 }
 
 
@@ -1030,6 +1101,16 @@ export interface CarModel {
   slug: string;
   name: string;
   years?: string;
+  /** Годы для поискового запроса — есть только если в магазине есть такая карточка. */
+  searchYears?: string;
+  /** Название нашей карточки на WB — из него получается точный поисковый запрос. */
+  wbPhrase?: string;
+  /** То же для карточки на лобовое стекло. */
+  wbWindshieldPhrase?: string;
+  /** Название нашей карточки на Ozon. */
+  ozonPhrase?: string;
+  /** То же для карточки на лобовое стекло. */
+  ozonWindshieldPhrase?: string;
   body?: string;
   popular?: boolean;
   /** Русские названия и частые варианты написания для поиска. */
@@ -1065,6 +1146,11 @@ for (const brand of brandList) {
   for (const m of brand.models) {
     const parts = [`slug: '${m.slug}'`, `name: '${esc(m.name)}'`];
     if (m.years) parts.push(`years: '${esc(m.years)}'`);
+    if (m.searchYears) parts.push(`searchYears: '${esc(m.searchYears)}'`);
+    if (m.wbPhrase) parts.push(`wbPhrase: '${esc(m.wbPhrase)}'`);
+    if (m.wbWindshieldPhrase) parts.push(`wbWindshieldPhrase: '${esc(m.wbWindshieldPhrase)}'`);
+    if (m.ozonPhrase) parts.push(`ozonPhrase: '${esc(m.ozonPhrase)}'`);
+    if (m.ozonWindshieldPhrase) parts.push(`ozonWindshieldPhrase: '${esc(m.ozonWindshieldPhrase)}'`);
     if (m.body) parts.push(`body: '${esc(m.body)}'`);
     if (popular.has(`${brand.slug}/${m.slug}`)) parts.push('popular: true');
     const al = [...m.aliases].filter((a) => a && a !== m.name.toLowerCase());
