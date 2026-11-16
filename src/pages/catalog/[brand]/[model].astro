@@ -112,6 +112,7 @@ const payload = {
   windshield: hasWindshield ? windshieldSet : null,
   telegram: site.telegram,
   wb: model.wb ?? {},
+  wbVlt: model.wbVlt ?? {},
   wbFallback: wbSearchUrl(marketplaceQuery),
   wbWindshieldFallback: wbSearchUrl(windshieldQuery),
   ozon: model.ozon ?? {},
@@ -350,6 +351,8 @@ const payload = {
     telegram: string;
     /** Артикулы Wildberries: тип плёнки → id товара. */
     wb: Record<string, number>;
+    /** Артикулы WB по проценту затемнения: плёнка → % → товар. */
+    wbVlt: Record<string, Record<string, number>>;
     /** Поиск на маркетплейсе, если точного артикула нет. */
     wbFallback: string;
     wbWindshieldFallback: string;
@@ -406,7 +409,9 @@ const payload = {
     // Ведём на карточку именно той плёнки, что выбрана. Лобовое стекло — отдельный
     // комплект: берём его собственный артикул, а не боковой тонировки.
     // Если артикула нет — отправляем в поиск, а не скрываем кнопку.
-    const id = windshield ? data.wb.windshield : data.wb[film.id];
+    const id = windshield
+      ? data.wb.windshield
+      : (data.wbVlt?.[film.id]?.[String(vlt)] ?? data.wb[film.id]);
     const wbSearch = windshield ? data.wbWindshieldFallback : data.wbFallback;
     if (wbButton) {
       wbButton.style.display = '';

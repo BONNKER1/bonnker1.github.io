@@ -223,6 +223,11 @@ function slugify(text) {
 /* ------------------------------------------------------------------ */
 
 const wbData = JSON.parse(fs.readFileSync('import/wb-api.json', 'utf8'));
+// Варианты (процент затемнения) карточек WB — из экспорта личного кабинета.
+const WB_VARIANTS_FILE = 'import/wb-variants.json';
+const WB_VARIANTS = fs.existsSync(WB_VARIANTS_FILE)
+  ? JSON.parse(fs.readFileSync(WB_VARIANTS_FILE, 'utf8'))
+  : {};
 const OZON_FILE = 'import/ozon-api.json';
 const ozonData = fs.existsSync(OZON_FILE)
   ? JSON.parse(fs.readFileSync(OZON_FILE, 'utf8'))
@@ -435,6 +440,7 @@ for (const product of data) {
       bodySet: new Set(body ? [body] : []),
       aliases: new Set(aliases.map((a) => a.toLowerCase())),
       wb: {},
+      wbVlt: {},
       ozon: {},
       count: 1,
     });
@@ -453,6 +459,16 @@ for (const product of data) {
   const current = entry.wb[kind];
   if (!current || feedbacks > current.feedbacks) {
     entry.wb[kind] = { id: Number(product.id), feedbacks };
+  }
+
+  // Процент затемнения этой карточки (если знаем) — по нему открываем точный вариант.
+  const variant = WB_VARIANTS[String(product.id)];
+  if (variant) {
+    const vlt = Number(String(variant).replace('%', ''));
+    if (vlt) {
+      const byVlt = (entry.wbVlt[kind] ??= {});
+      byVlt[vlt] = Number(product.id);
+    }
   }
 }
 
@@ -707,6 +723,7 @@ for (const rawBrand of lekaloData.brands ?? []) {
       bodySet: new Set(body ? [body] : []),
       aliases: new Set(),
       wb: {},
+      wbVlt: {},
       ozon: {},
       count: 0,
       lekaloUrl: item.url,
@@ -793,6 +810,20 @@ const esc = (s) => s.replace(/'/g, "\\'");
 const FILM_ORDER = ['silicone', 'classic', 'athermal', 'hard', 'windshield'];
 const OZON_SET_ORDER = ['front', 'rear', 'full', 'windshield'];
 
+/** Литерал поля wbVlt: артикулы WB по проценту затемнения. */
+function wbVltLiteral(model) {
+  const groups = [];
+  for (const kind of FILM_ORDER) {
+    const map = model.wbVlt?.[kind];
+    if (!map || !Object.keys(map).length) continue;
+    const items = Object.entries(map)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([vlt, id]) => `${vlt}: ${id}`);
+    groups.push(`${kind}: { ${items.join(', ')} }`);
+  }
+  return groups.length ? `wbVlt: { ${groups.join(', ')} }` : '';
+}
+
 /** Литерал поля ozon для сгенерированного файла. */
 function ozonLiteral(model) {
   const groups = [];
@@ -836,6 +867,8 @@ export interface CarModel {
   aliases?: string[];
   /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
   wb?: Partial<Record<FilmId | 'windshield', number>>;
+  /** Артикулы Wildberries по проценту затемнения: плёнка → % → товар. */
+  wbVlt?: Partial<Record<FilmId, Record<number, number>>>;
   /** Товары Ozon: тип плёнки → комплект → SKU. */
   ozon?: Partial<Record<FilmId, Partial<Record<SetId | 'windshield', OzonOffer>>>>;
 }
@@ -869,6 +902,8 @@ for (const brand of brandList) {
     if (al.length && al.length <= 4) parts.push(`aliases: [${al.map((a) => `'${esc(a)}'`).join(', ')}]`);
     const wb = FILM_ORDER.filter((kind) => m.wb[kind]).map((kind) => `${kind}: ${m.wb[kind].id}`);
     if (wb.length) parts.push(`wb: { ${wb.join(', ')} }`);
+    const wbVlt = wbVltLiteral(m);
+    if (wbVlt) parts.push(wbVlt);
     const ozon = ozonLiteral(m);
     if (ozon) parts.push(ozon);
     out += `      { ${parts.join(', ')} },\n`;
