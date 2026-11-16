@@ -244,6 +244,8 @@ const ozonPending = [];
 // Годы товаров магазина по «ядру» названия: нужны, чтобы поисковый запрос
 // не требовал от карточки лишних слов (тогда маркетплейс ничего не находит).
 const storeYears = new Map();
+// Название карточки магазина по «ядру» названия — из него получается точный запрос.
+const storeNames = new Map();
 
 function detectMake(rest) {
   const lower = rest.toLowerCase();
@@ -431,6 +433,10 @@ for (const product of data) {
   }
   const key = `${make.slug}/${slug}`;
   noteStoreYears(make.slug, display, years);
+  // Лобовое стекло — отдельная карточка, в общий запрос она не годится.
+  if (!/лобов/i.test(name)) {
+    noteStoreName(make.slug, display, name, product.source === 'ozon' ? 'ozon' : 'wb');
+  }
   // Ozon-товары прикрепляем позже: сначала собираем базу лекал, чтобы понимать,
   // к какой модели (с учётом поколения и годов) относится товар.
   if (product.source === 'ozon') {
@@ -829,6 +835,14 @@ function noteStoreYears(brandSlug, display, years) {
   storeYears.set(key, set);
 }
 
+/** Запоминаем название карточки магазина для этого «ядра» — по нему строим запрос. */
+function noteStoreName(brandSlug, display, name, source) {
+  const key = `${brandSlug}|${coreOf(display)}`;
+  const entry = storeNames.get(key) ?? {};
+  if (!entry[source]) entry[source] = storePhrase(name);
+  storeNames.set(key, entry);
+}
+
 /**
  * Название нашей карточки без слов про тип плёнки — из него получается точный
  * поисковый запрос: маркетплейс найдёт именно наш товар, а не чужие коврики.
@@ -969,11 +983,17 @@ for (const item of ozonPending) {
 // Годы для поискового запроса: добавляем только если в нашем магазине действительно
 // есть карточка с такими годами — иначе маркетплейс не найдёт ничего.
 for (const entry of entries.values()) {
-  const ranges = storeYears.get(`${entry.brandSlug}|${coreOf(entry.name)}`);
+  const key = `${entry.brandSlug}|${coreOf(entry.name)}`;
+  const ranges = storeYears.get(key);
   entry.searchYears =
     entry.years && ranges && ranges.has(normRange(entry.years))
       ? entry.years.replace(/[–—]/g, '-')
       : '';
+  // Если своя карточка не привязалась (например, поколение неоднозначно),
+  // берём название карточки магазина — поиск всё равно приведёт к нашему товару.
+  const names = storeNames.get(key);
+  if (!entry.wbPhrase && names?.wb) entry.wbPhrase = names.wb;
+  if (!entry.ozonPhrase && names?.ozon) entry.ozonPhrase = names.ozon;
 }
 
 
