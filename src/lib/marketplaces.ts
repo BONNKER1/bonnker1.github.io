@@ -57,9 +57,14 @@ export function searchLabel(brand: CarBrand, model: CarModel): string {
   return `${brandName} ${name || model.name}`.replace(/\s+/g, ' ').trim();
 }
 
-/** Поисковый запрос, по которому находятся именно комплекты тонировки. */
+/**
+ * Поисковый запрос, по которому находятся именно комплекты тонировки.
+ * Годы добавляем, чтобы в выдаче магазина было нужное поколение автомобиля.
+ */
 export function searchQuery(brand: CarBrand, model: CarModel): string {
-  return `тонировка ${searchLabel(brand, model)}`;
+  const base = `тонировка ${searchLabel(brand, model)}`;
+  const years = model.years?.replace(/[–—]/g, '-').trim();
+  return years ? `${base} ${years}` : base;
 }
 
 export function wbProductUrl(id?: number): string {

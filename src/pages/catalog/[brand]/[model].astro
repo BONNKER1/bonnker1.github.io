@@ -49,7 +49,9 @@ const hasWindshield = brand.slug === 'lada';
 
 const autoLabel = modelLabel(brand, model);
 const marketplaceQuery = searchQuery(brand, model);
-const windshieldQuery = `тонировка лобовое стекло ${searchLabel(brand, model)}`;
+const windshieldQuery = `тонировка лобовое стекло ${searchLabel(brand, model)}${
+  model.years ? ` ${model.years.replace(/[–—]/g, '-')}` : ''
+}`;
 
 // Прямая карточка, если она есть в выгрузке; иначе — поиск по магазину.
 const wbLink = modelWbLink(brand, model);
@@ -455,7 +457,7 @@ const payload = {
         ozonNote.textContent =
           'Точного артикула для этого комплекта нет — откроем поиск в нашем магазине на Ozon. Или закажите в Telegram.';
       } else if (otherPlace) {
-        ozonNote.textContent = `На Ozon эта плёнка продаётся только комплектом «${setNames[otherPlace]}» — открыли его карточку.`;
+        ozonNote.textContent = `У этой плёнки на Ozon есть только комплект «${setNames[otherPlace]}» — открыли его карточку.`;
       }
     }
 

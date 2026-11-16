@@ -240,6 +240,7 @@ const data = [
 const entries = new Map(); // `${brandSlug}/${modelSlug}` -> {brandSlug, name, years, aliases:Set, count}
 const skipped = [];
 const ozonSkipped = [];
+const ozonPending = [];
 
 function detectMake(rest) {
   const lower = rest.toLowerCase();
@@ -320,6 +321,14 @@ for (const product of data) {
     const to = yearMatch[2].replace(/\s+/g, '').replace(/н\.?в\.?/i, 'н.в.');
     years = `${yearMatch[1]}–${to}`;
     modelPart = modelPart.replace(yearMatch[0], ' ');
+  } else {
+    // «07-16г», «98-04» — короткий диапазон лет в названиях WB.
+    const shortMatch = modelPart.match(/(?:^|[\s,])(\d{2})\s*[-–—]\s*(\d{2})\s*г?(?=[\s,]|$)/i);
+    if (shortMatch) {
+      const century = (yy) => (Number(yy) >= 70 ? `19${yy}` : `20${yy}`);
+      years = `${century(shortMatch[1])}–${century(shortMatch[2])}`;
+      modelPart = modelPart.replace(shortMatch[0], ' ');
+    }
   }
 
   let body = '';
@@ -416,9 +425,10 @@ for (const product of data) {
     slug = slugify(display);
   }
   const key = `${make.slug}/${slug}`;
-  // Ozon-товары только прикрепляем к моделям, которые уже есть в базе лекал WB.
-  if (product.source === 'ozon' && !entries.has(key)) {
-    ozonSkipped.push(name);
+  // Ozon-товары прикрепляем позже: сначала собираем базу лекал, чтобы понимать,
+  // к какой модели (с учётом поколения и годов) относится товар.
+  if (product.source === 'ozon') {
+    ozonPending.push({ product, brandSlug: make.slug, display, years, key });
     continue;
   }
   for (const extra of EXTRA_ALIASES[key] ?? []) aliases.push(extra);
@@ -747,6 +757,154 @@ for (const e of entries.values()) {
   e.body = e.bodySet.size === 1 ? [...e.bodySet][0] : '';
 }
 
+/* ------------------------------------------------------------------ */
+/* 2c. Слияние карточек маркетплейсов с моделями базы лекал              */
+/* ------------------------------------------------------------------ */
+
+/** Диапазон лет из строки «2000–2007» или «2018–н.в.». */
+function yearRange(text) {
+  if (!text) return null;
+  const open = text.match(/(\d{4})\D*н\.?\s?в\.?/i);
+  if (open) return [Number(open[1]), 9999];
+  const range = text.match(/(\d{4})\D+(\d{4})/);
+  if (range) return [Number(range[1]), Number(range[2])];
+  const one = text.match(/(\d{4})/);
+  if (one) return [Number(one[1]), Number(one[1])];
+  return null;
+}
+
+/** Совместимы ли диапазоны лет: пересечение должно быть существенным. */
+function yearsCompatible(a, b) {
+  const ra = yearRange(a);
+  const rb = yearRange(b);
+  if (!ra || !rb) return true;
+  const overlap = Math.min(ra[1], rb[1]) - Math.max(ra[0], rb[0]) + 1;
+  if (overlap <= 0) return false;
+  const lenA = ra[1] - ra[0] + 1;
+  const lenB = rb[1] - rb[0] + 1;
+  return overlap >= 2 || overlap >= 0.5 * Math.min(lenA, lenB);
+}
+
+/** Слова названия модели — по ним сравниваем карточку товара и модель сайта. */
+function modelTokens(name) {
+  return normName(name).split(' ').filter(Boolean);
+}
+
+/**
+ * Модель сайта для карточки товара: «Camry» → «Camry XV40», «XC70» → «XC70 3 поколение».
+ * Сравниваем первые слова названия и годы; если подходит несколько моделей — не гадаем.
+ */
+function findModelMatch(brandSlug, display, years, { exclude = null, lekaloOnly = false } = {}) {
+  const tokens = modelTokens(display);
+  if (!tokens.length) return null;
+  const candidates = [...entries.values()].filter((e) => {
+    if (e === exclude) return false;
+    if (lekaloOnly && !e.lekaloUrl) return false;
+    if (e.brandSlug !== brandSlug) return false;
+    const ct = modelTokens(e.name);
+    if (!ct.length || ct[0] !== tokens[0]) return false;
+    // «Camry Solara» — не «Camry»: второе слово должно совпадать, если оба названия его имеют.
+    if (tokens.length > 1 && ct.length > 1 && ct[1] !== tokens[1]) return false;
+    return true;
+  });
+  if (!candidates.length) return null;
+  const exact = candidates.filter((e) => normName(e.name) === normName(display));
+  if (exact.length === 1) return exact[0];
+  // Точное совпадение годов: «Camry 2006–2011» → «Camry XV40 7 поколение».
+  if (years) {
+    const sameYears = candidates.filter((e) => e.years === years);
+    if (sameYears.length === 1) return sameYears[0];
+  }
+  const compatible = candidates.filter((e) => yearsCompatible(e.years, years));
+  return compatible.length === 1 ? compatible[0] : null;
+}
+
+/** Сколько ссылок на маркетплейсы у модели. */
+function linksCount(entry) {
+  const wb = Object.keys(entry.wb ?? {}).length;
+  const ozon = Object.values(entry.ozon ?? {}).reduce(
+    (sum, places) => sum + Object.keys(places ?? {}).length,
+    0,
+  );
+  return wb + ozon;
+}
+
+/** Переносим ссылки с одной модели на другую. */
+function mergeLinks(target, source) {
+  for (const [kind, data] of Object.entries(source.wb ?? {})) {
+    const current = target.wb[kind];
+    if (!current || (data.feedbacks ?? 0) > current.feedbacks) target.wb[kind] = data;
+  }
+  for (const [kind, map] of Object.entries(source.wbVlt ?? {})) {
+    const byVlt = (target.wbVlt[kind] ??= {});
+    for (const [vlt, id] of Object.entries(map)) byVlt[vlt] = id;
+  }
+  for (const [film, places] of Object.entries(source.ozon ?? {})) {
+    const byFilm = (target.ozon[film] ??= {});
+    for (const [place, offer] of Object.entries(places ?? {})) {
+      const current = byFilm[place];
+      if (!current) {
+        byFilm[place] = offer;
+        continue;
+      }
+      const vlt = (current.vlt ??= {});
+      for (const [value, id] of Object.entries(offer.vlt ?? {})) vlt[value] = id;
+    }
+  }
+  target.count += source.count ?? 0;
+}
+
+// Одни и те же модели под разными названиями («Camry XV10 4 поколение» и
+// «Camry 4 поколение, XV10») объединяем: ссылки остаются на одной странице.
+let duplicatesMerged = 0;
+{
+  const groups = new Map();
+  for (const [key, entry] of entries) {
+    if (!entry.years) continue;
+    const signature = `${entry.brandSlug}|${[...modelTokens(entry.name)].sort().join(' ')}|${entry.years}`;
+    const list = groups.get(signature) ?? [];
+    list.push([key, entry]);
+    groups.set(signature, list);
+  }
+  for (const [, list] of groups) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => linksCount(b[1]) - linksCount(a[1]) || a[1].name.length - b[1].name.length);
+    const [, keep] = list[0];
+    for (const [key, entry] of list.slice(1)) {
+      mergeLinks(keep, entry);
+      entries.delete(key);
+      duplicatesMerged += 1;
+    }
+  }
+}
+
+// Карточки WB без пары в базе лекал прикрепляем к модели с тем же «ядром»
+// названия и совместимыми годами: «XC70» → «XC70 3 поколение».
+let wbMerged = 0;
+for (const [key, entry] of [...entries.entries()]) {
+  if (entry.lekaloUrl) continue;
+  const target = findModelMatch(entry.brandSlug, entry.name, entry.years, {
+    exclude: entry,
+    lekaloOnly: true,
+  });
+  if (!target || target === entry) continue;
+  mergeLinks(target, entry);
+  entries.delete(key);
+  wbMerged += 1;
+}
+
+// Товары Ozon: прикрепляем к точной модели или к модели лекала с тем же «ядром».
+let ozonAttached = 0;
+for (const item of ozonPending) {
+  const entry = entries.get(item.key) ?? findModelMatch(item.brandSlug, item.display, item.years);
+  if (!entry) {
+    ozonSkipped.push(item.product.name);
+    continue;
+  }
+  attachOzon(entry, item.product);
+  ozonAttached += 1;
+}
+
 
 
 /* ------------------------------------------------------------------ */
@@ -790,7 +948,18 @@ const popular = new Set();
 for (const [brandSlug, needles] of POPULAR) {
   const candidates = [...entries.values()].filter((e) => e.brandSlug === brandSlug);
   const exact = candidates.find((e) => needles.some((n) => e.name === n));
-  const hit = exact ?? candidates.find((e) => needles.some((n) => e.name.includes(n)));
+  const scored = (e) => {
+    const feedbacks = Math.max(
+      0,
+      ...Object.values(e.wb ?? {}).map((item) => item.feedbacks ?? 0),
+    );
+    return linksCount(e) * 1000 + feedbacks;
+  };
+  const hit =
+    exact ??
+    candidates
+      .filter((e) => needles.some((n) => e.name.includes(n)))
+      .sort((a, b) => scored(b) - scored(a))[0];
   if (hit) popular.add(`${hit.brandSlug}/${hit.slug}`);
 }
 
@@ -985,6 +1154,12 @@ console.log(
   lekaloSkipped,
   '| пропущено WB:',
   skipped.length,
+  '| карточек WB слито с лекалами:',
+  wbMerged,
+  '| дублей моделей объединено:',
+  duplicatesMerged,
+  '| товаров Ozon привязано:',
+  ozonAttached,
 );
 console.log('популярные:', [...popular].join(', '));
 fs.writeFileSync('import/skipped.txt', skipped.join('\n'), 'utf8');
