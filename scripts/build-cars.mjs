@@ -474,13 +474,18 @@ for (const product of data) {
     continue;
   }
 
-  // Артикул WB для типа плёнки: из нескольких карточек берём самую обзвоненную.
+  // Артикул WB для типа плёнки: из нескольких карточек берём лучшую.
+  // Карточки, которых нет в наличии, WB открывает с ошибкой — их пропускаем.
   // Лобовое стекло — отдельный комплект, его не мешаем с боковыми стёклами.
   const kind = /лобов/i.test(name) ? 'windshield' : filmKind(name);
   const feedbacks = Number(product.feedbacks) || 0;
+  const quantity = product.quantity;
+  const stock = quantity === null || quantity === undefined ? undefined : Number(quantity) > 0;
+  if (stock === false) continue;
   const current = entry.wb[kind];
-  if (!current || feedbacks > current.feedbacks) {
-    entry.wb[kind] = { id: Number(product.id), feedbacks };
+  const candidate = { id: Number(product.id), feedbacks, stock };
+  if (betterWb(candidate, current)) {
+    entry.wb[kind] = candidate;
     if (kind === 'windshield') entry.wbWindshieldPhrase = storePhrase(product.name);
     else entry.wbPhrase = storePhrase(product.name);
   }
@@ -896,6 +901,14 @@ function linksCount(entry) {
   return wb + ozon;
 }
 
+/** Лучше ли новая карточка WB текущей: сначала наличие, потом отзывы. */
+function betterWb(candidate, current) {
+  if (!current) return true;
+  if (candidate.stock === true && current.stock !== true) return true;
+  if (current.stock === true && candidate.stock !== true) return false;
+  return (candidate.feedbacks ?? 0) > (current.feedbacks ?? 0);
+}
+
 /** Переносим ссылки с одной модели на другую. */
 function mergeLinks(target, source) {
   if (!target.wbPhrase && source.wbPhrase) target.wbPhrase = source.wbPhrase;
@@ -908,7 +921,7 @@ function mergeLinks(target, source) {
   }
   for (const [kind, data] of Object.entries(source.wb ?? {})) {
     const current = target.wb[kind];
-    if (!current || (data.feedbacks ?? 0) > current.feedbacks) target.wb[kind] = data;
+    if (betterWb(data, current)) target.wb[kind] = data;
   }
   for (const [kind, map] of Object.entries(source.wbVlt ?? {})) {
     const byVlt = (target.wbVlt[kind] ??= {});

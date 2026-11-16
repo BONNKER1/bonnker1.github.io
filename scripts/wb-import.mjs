@@ -201,7 +201,7 @@ async function main() {
         const json = await res.json();
         const products = json?.data?.products || json?.products || [];
         if (!products.length) break;
-        for (const p of products) out.push({ id: p.id, name: p.name, brand: p.brand, price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null, feedbacks: p.feedbacks ?? null, rating: p.reviewRating ?? null, sizes: (p.sizes || []).map((s) => ({ name: s.name, price: s.price?.total ?? null, quantity: s.quantity ?? null })) });
+        for (const p of products) out.push({ id: p.id, name: p.name, brand: p.brand, price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null, feedbacks: p.feedbacks ?? null, rating: p.reviewRating ?? null, quantity: p.totalQuantity ?? p.sizes?.[0]?.quantity ?? null, sizes: (p.sizes || []).map((s) => ({ name: s.name, price: s.price?.total ?? null, quantity: s.quantity ?? null })) });
         if (products.length < 30) break;
       }
       return { pages: 'ok', items: out };
@@ -235,6 +235,7 @@ async function main() {
             price: p.sizes?.[0]?.price?.total ?? p.salePriceU ?? null,
             feedbacks: p.feedbacks ?? null,
             rating: p.reviewRating ?? p.rating ?? null,
+            quantity: p.totalQuantity ?? p.sizes?.[0]?.quantity ?? null,
             sizes: (p.sizes || []).map((s) => ({ name: s.name, price: s.price?.total ?? null, quantity: s.quantity ?? null })),
           });
         }
