@@ -13,26 +13,40 @@ const minPrice = Math.min(...films.map((film) => film.basePrice));
 const body = model.body;
 const searchText = modelSearchText(brand, model);
 ---
-<a
+<div
   class="car-card"
-  href={`/catalog/${brand.slug}/${model.slug}/`}
   data-brand={brand.slug}
   data-model={model.slug}
   data-search={searchText}
 >
-  <span class="car-card__top">
-    <span class="car-card__brand">{brand.name}</span>
-    {model.years && <span class="car-card__years">{model.years}</span>}
-  </span>
-  <span class="car-card__name">{model.name}</span>
-  <span class="car-card__bottom">
-    <span class="car-card__body">{body ?? 'лекала в наличии'}</span>
-    <span class="car-card__price">от {formatPrice(minPrice)}</span>
-  </span>
-</a>
+  <a class="car-card__link" href={`/catalog/${brand.slug}/${model.slug}/`}>
+    <span class="car-card__top">
+      <span class="car-card__brand">{brand.name}</span>
+      {model.years && <span class="car-card__years">{model.years}</span>}
+    </span>
+    <span class="car-card__name">{model.name}</span>
+    <span class="car-card__bottom">
+      <span class="car-card__body">{body ?? 'лекала в наличии'}</span>
+      <span class="car-card__price">от {formatPrice(minPrice)}</span>
+    </span>
+  </a>
+  <button
+    type="button"
+    class="car-card__fav"
+    data-fav
+    data-fav-key={`${brand.slug}/${model.slug}`}
+    aria-label="Добавить в избранное"
+    aria-pressed="false"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 21s-7-4.6-9.5-9C.5 8.4 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.4 21.5 12 19 16.4 12 21 12 21Z"></path>
+    </svg>
+  </button>
+</div>
 
 <style>
   .car-card {
+    position: relative;
     display: grid;
     gap: var(--space-2);
     padding: var(--space-5);
@@ -47,6 +61,50 @@ const searchText = modelSearchText(brand, model);
   .car-card:hover {
     border-color: var(--color-accent);
     transform: translateY(-2px);
+  }
+
+  .car-card__link {
+    display: grid;
+    gap: var(--space-2);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .car-card__fav {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: color 160ms ease-out, border-color 160ms ease-out, background-color 160ms ease-out;
+  }
+
+  .car-card__fav svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .car-card__fav:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+
+  .car-card__fav[aria-pressed='true'] {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    border-color: var(--color-accent);
+  }
+
+  .car-card__fav[aria-pressed='true'] svg {
+    fill: var(--color-accent);
   }
 
   .car-card__top,

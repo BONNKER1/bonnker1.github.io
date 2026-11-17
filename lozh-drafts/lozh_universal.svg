@@ -1,0 +1,130 @@
+<svg width="400mm" height="300mm" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .cut { fill: none; stroke: #0055ff; stroke-width: 0.6; stroke-linecap: round; stroke-linejoin: round; }
+      .border { fill: none; stroke: #ff0000; stroke-width: 0.8; }
+      .engrave { fill: #111111; font-family: 'Arial', 'Helvetica', sans-serif; font-size: 11px; font-weight: bold; text-anchor: middle; }
+      .title { fill: #111111; font-family: 'Arial', 'Helvetica', sans-serif; font-size: 13px; font-weight: bold; }
+      .brand { fill: #111111; font-family: 'Arial', 'Helvetica', sans-serif; font-size: 16px; font-weight: 900; letter-spacing: 2px; }
+    </style>
+  </defs>
+
+  <!-- 1. ВНЕШНЯЯ ГРАНИЦА РЕЗА (400 х 300 мм) -->
+  <rect class="border" x="0" y="0" width="400" height="300" rx="4"/>
+
+  <!-- ШАПКА / БРЕНД -->
+  <text class="brand" x="25" y="32">BOONKER TOOLS</text>
+  <text class="title" x="250" y="32">МОДУЛЬ 1/2" DRIVE</text>
+  <line x1="25" y1="42" x2="375" y2="42" stroke="#111111" stroke-width="1"/>
+
+  <!-- 2. ТРЕЩОТКА 1/2" (Строгий геометрический контур) -->
+  <!-- Голова R=22, шток, ручка с ровными полукруглыми вырезами под пальцы -->
+  <path class="cut" d="
+    M 65 58
+    A 22 22 0 1 0 65 102
+    L 130 92
+    L 165 94
+    A 12 12 0 0 1 189 94
+    L 260 94
+    A 11 11 0 0 0 260 66
+    L 189 66
+    A 12 12 0 0 1 165 66
+    L 130 68
+    Z
+  "/>
+  <!-- Подпись на трещотке -->
+  <text class="engrave" x="225" y="84">1/2" RATCHET</text>
+
+  <!-- 3. УДЛИНИТЕЛЬ 125 мм -->
+  <path class="cut" d="
+    M 45 125 
+    L 45 145 
+    L 62 145 
+    L 62 141 
+    L 125 141
+    A 10 10 0 0 1 145 141
+    L 190 141 
+    L 190 147 
+    L 205 147 
+    L 205 123 
+    L 190 123 
+    L 190 129 
+    L 145 129
+    A 10 10 0 0 1 125 129
+    L 62 129 
+    L 62 125 
+    Z
+  "/>
+  <text class="engrave" x="135" y="159">EXTENSION 125 mm</text>
+
+  <!-- 4. КАРДАН 1/2" -->
+  <path class="cut" d="
+    M 260 120
+    L 315 120
+    A 6 6 0 0 1 321 126
+    L 321 144
+    A 6 6 0 0 1 315 150
+    L 260 150
+    A 6 6 0 0 1 254 144
+    L 254 126
+    A 6 6 0 0 1 260 120
+    Z
+  "/>
+  <!-- Выемки под пальцы для кардана -->
+  <circle class="cut" cx="287.5" cy="120" r="8"/>
+  <circle class="cut" cx="287.5" cy="150" r="8"/>
+  <text class="engrave" x="287.5" y="165">UNIVERSAL JOINT</text>
+
+  <line x1="25" y1="180" x2="375" y2="180" stroke="#cccccc" stroke-width="0.8" stroke-dasharray="4"/>
+
+  <!-- 5. СЕКЦИЯ ГОЛОВОК (10 - 24 мм) — Идеальные строгие круги -->
+  <!-- Ряд 1: Крупные головки (24, 22, 19, 17, 15) -->
+  
+  <!-- 24 мм (D=32 мм, R=16) -->
+  <circle class="cut" cx="50" cy="215" r="16"/>
+  <text class="engrave" x="50" y="243">24</text>
+
+  <!-- 22 мм (D=30 мм, R=15) -->
+  <circle class="cut" cx="100" cy="215" r="15"/>
+  <text class="engrave" x="100" y="243">22</text>
+
+  <!-- 19 мм (D=27 мм, R=13.5) -->
+  <circle class="cut" cx="147" cy="215" r="13.5"/>
+  <text class="engrave" x="147" y="243">19</text>
+
+  <!-- 17 мм (D=25 мм, R=12.5) -->
+  <circle class="cut" cx="190" cy="215" r="12.5"/>
+  <text class="engrave" x="190" y="243">17</text>
+
+  <!-- 15 мм (D=23 мм, R=11.5) -->
+  <circle class="cut" cx="230" cy="215" r="11.5"/>
+  <text class="engrave" x="230" y="243">15</text>
+
+  <!-- Ряд 2: Средние и мелкие головки (14, 13, 12, 11, 10, 8) -->
+  
+  <!-- 14 мм (D=22 мм, R=11) -->
+  <circle class="cut" cx="270" cy="215" r="11"/>
+  <text class="engrave" x="270" y="243">14</text>
+
+  <!-- 13 мм (D=20 мм, R=10) -->
+  <circle class="cut" cx="308" cy="215" r="10"/>
+  <text class="engrave" x="308" y="243">13</text>
+
+  <!-- 12 мм (D=19 мм, R=9.5) -->
+  <circle class="cut" cx="344" cy="215" r="9.5"/>
+  <text class="engrave" x="344" y="243">12</text>
+
+  <!-- Второй ярус для мелочи (11, 10, 8 мм) -->
+  <!-- 11 мм (D=18 мм, R=9) -->
+  <circle class="cut" cx="270" cy="265" r="9"/>
+  <text class="engrave" x="270" y="286">11</text>
+
+  <!-- 10 мм (D=17 мм, R=8.5) -->
+  <circle class="cut" cx="308" cy="265" r="8.5"/>
+  <text class="engrave" x="308" y="286">10</text>
+
+  <!-- 8 мм (D=15 мм, R=7.5) -->
+  <circle class="cut" cx="344" cy="265" r="7.5"/>
+  <text class="engrave" x="344" y="286">8</text>
+
+</svg>

@@ -68,5 +68,53 @@ const ogImage = new URL(image, site.url).href;
     <Footer />
     <MobileBar />
     <BackToTop />
+    <script>
+      (function () {
+        const KEY = 'boonker:favorites';
+        const read = (): string[] => {
+          try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+        };
+        const write = (list: string[]) => localStorage.setItem(KEY, JSON.stringify(list));
+        const has = (key: string) => read().includes(key);
+        const toggle = (key: string) => {
+          const list = read();
+          const i = list.indexOf(key);
+          if (i >= 0) list.splice(i, 1); else list.push(key);
+          write(list);
+          return i < 0;
+        };
+        const syncButtons = () => {
+          document.querySelectorAll('[data-fav]').forEach((btn) => {
+            const key = btn.getAttribute('data-fav-key');
+            if (!key) return;
+            const on = has(key);
+            btn.setAttribute('aria-pressed', String(on));
+            btn.classList.toggle('is-on', on);
+          });
+        };
+        const syncBadge = () => {
+          const count = read().length;
+          document.querySelectorAll('[data-fav-count]').forEach((el) => {
+            el.textContent = String(count);
+            (el as HTMLElement).hidden = count === 0;
+          });
+        };
+        document.addEventListener('click', (e) => {
+          const target = e.target as HTMLElement | null;
+          const btn = target?.closest?.('[data-fav]') as HTMLElement | null;
+          if (!btn) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const key = btn.getAttribute('data-fav-key');
+          if (!key) return;
+          toggle(key);
+          syncButtons();
+          syncBadge();
+        });
+        syncButtons();
+        syncBadge();
+        window.addEventListener('storage', () => { syncButtons(); syncBadge(); });
+      })();
+    </script>
   </body>
 </html>

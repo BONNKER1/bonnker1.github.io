@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbsSchema } from '../lib/schema';
+---
+
+<BaseLayout
+  title="Избранное"
+  description="Сохранённые модели автомобилей: быстрый доступ к лекалам и комплектам тонировки."
+  schemas={[breadcrumbsSchema([{ name: 'Главная', url: '/' }, { name: 'Избранное', url: '/izbrannoe/' }])]}
+  noindex
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Избранное' }]} />
+  </div>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="eyebrow">Избранное</p>
+      <h1>Сохранённые модели</h1>
+      <p class="lead" data-fav-empty>
+        Здесь появятся модели, которые вы отметили сердечком. Добавляйте их на страницах
+        каталога — список хранится в вашем браузере.
+      </p>
+
+      <ul class="fav-list" data-fav-list hidden></ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  interface IndexData {
+    brands: [string, string, string][];
+    models: [number, string, string, string, string][];
+  }
+
+  const base = import.meta.env.BASE_URL;
+  const list = document.querySelector<HTMLElement>('[data-fav-list]');
+  const empty = document.querySelector<HTMLElement>('[data-fav-empty]');
+
+  const read = () => {
+    try { return JSON.parse(localStorage.getItem('boonker:favorites') || '[]'); } catch { return []; }
+  };
+
+  async function render() {
+    const keys = read();
+    if (!list) return;
+    if (keys.length === 0) {
+      list.hidden = true;
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (empty) empty.hidden = true;
+
+    try {
+      const response = await fetch(`${base}catalog-index.json`);
+      const data = (await response.json()) as IndexData;
+      const byKey = new Map<string, { brandSlug: string; brandName: string; slug: string; name: string; years: string }>();
+      data.models.forEach(([brandIndex, slug, name, years]) => {
+        const brand = data.brands[brandIndex];
+        if (!brand) return;
+        byKey.set(`${brand[0]}/${slug}`, { brandSlug: brand[0], brandName: brand[1], slug, name, years });
+      });
+
+      const fragment = document.createDocumentFragment();
+      keys.forEach((key: string) => {
+        const info = byKey.get(key);
+        if (!info) return;
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `${base}catalog/${info.brandSlug}/${info.slug}/`;
+        a.className = 'fav-item';
+        a.innerHTML = `<span class="fav-item__brand">${info.brandName}</span><span class="fav-item__name">${info.name}</span>${info.years ? `<span class="fav-item__years">${info.years}</span>` : ''}<span class="fav-item__arrow">→</span>`;
+        li.append(a);
+        fragment.append(li);
+      });
+      list.replaceChildren(fragment);
+      list.hidden = fragment.childElementCount === 0;
+    } catch (error) {
+      console.error(error);
+      if (empty) { empty.hidden = false; empty.textContent = 'Ошибка загрузки: ' + String(error); }
+    }
+  }
+
+  render();
+  window.addEventListener('storage', render);
+</script>
+
+<style>
+  .fav-list {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+    margin-top: var(--space-6);
+  }
+
+  .fav-item a {
+    display: grid;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition: border-color 140ms ease-out;
+  }
+
+  .fav-item a:hover {
+    border-color: var(--color-accent);
+  }
+
+  .fav-item__brand {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .fav-item__name {
+    font-weight: 600;
+  }
+
+  .fav-item__years {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    white-space: nowrap;
+  }
+
+  .fav-item__arrow {
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 640px) {
+    .fav-item a {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .fav-item__brand,
+    .fav-item__years {
+      display: none;
+    }
+  }
+</style>

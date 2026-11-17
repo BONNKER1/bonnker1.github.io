@@ -1,0 +1,104 @@
+<svg width="400mm" height="300mm" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- ВНЕШНИЙ КОНТУР (РЕЗ) -->
+  <rect x="0" y="0" width="400" height="300" fill="none" stroke="red" stroke-width="1"/>
+
+  <!-- ЗАГОЛОВОК -->
+  <text x="200" y="18" font-family="Arial" font-size="12" fill="black" text-anchor="middle">WRENCH SET 6-22</text>
+
+  <!-- КЛЮЧИ: горизонтальные пазы с "головками" по концам -->
+  <!-- Каждый ключ: рожок слева (вилка) + ручка + накидное кольцо справа -->
+
+  <!-- Ключ 22 (самый длинный, верхний) -->
+  <path d="M 25 40
+           l 14 -9 l 0 6 l 6 0 l 0 -6 l 14 9
+           l 0 6 l -8 0
+           l 300 0
+           l 0 -4 a 12 12 0 1 1 0 24
+           l 0 -4 l -300 0
+           l -8 0
+           l 0 6 Z"
+        fill="none" stroke="black" stroke-width="0.6" transform="translate(0,0)"/>
+  <text x="370" y="55" font-family="Arial" font-size="9" fill="black">22</text>
+
+  <!-- Ключ 19 -->
+  <path d="M 25 80
+           l 13 -8 l 0 5 l 6 0 l 0 -5 l 13 8
+           l 0 5 l -7 0
+           l 280 0
+           l 0 -3 a 11 11 0 1 1 0 22
+           l 0 -3 l -280 0
+           l -7 0
+           l 0 5 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="350" y="95" font-family="Arial" font-size="9" fill="black">19</text>
+
+  <!-- Ключ 17 -->
+  <path d="M 25 118
+           l 12 -7 l 0 5 l 6 0 l 0 -5 l 12 7
+           l 0 5 l -7 0
+           l 250 0
+           l 0 -3 a 10 10 0 1 1 0 20
+           l 0 -3 l -250 0
+           l -7 0
+           l 0 5 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="320" y="132" font-family="Arial" font-size="9" fill="black">17</text>
+
+  <!-- Ключ 14 -->
+  <path d="M 25 154
+           l 11 -7 l 0 4 l 6 0 l 0 -4 l 11 7
+           l 0 5 l -7 0
+           l 220 0
+           l 0 -3 a 9 9 0 1 1 0 18
+           l 0 -3 l -220 0
+           l -7 0
+           l 0 5 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="290" y="167" font-family="Arial" font-size="9" fill="black">14</text>
+
+  <!-- Ключ 12 -->
+  <path d="M 25 188
+           l 10 -6 l 0 4 l 6 0 l 0 -4 l 10 6
+           l 0 5 l -7 0
+           l 190 0
+           l 0 -3 a 8 8 0 1 1 0 16
+           l 0 -3 l -190 0
+           l -7 0
+           l 0 5 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="255" y="200" font-family="Arial" font-size="9" fill="black">12</text>
+
+  <!-- Ключ 10 -->
+  <path d="M 25 220
+           l 9 -6 l 0 4 l 6 0 l 0 -4 l 9 6
+           l 0 4 l -6 0
+           l 160 0
+           l 0 -2 a 7 7 0 1 1 0 14
+           l 0 -2 l -160 0
+           l -6 0
+           l 0 4 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="220" y="231" font-family="Arial" font-size="9" fill="black">10</text>
+
+  <!-- Ключ 8 -->
+  <path d="M 25 250
+           l 8 -5 l 0 4 l 6 0 l 0 -4 l 8 5
+           l 0 4 l -6 0
+           l 130 0
+           l 0 -2 a 6 6 0 1 1 0 12
+           l 0 -2 l -130 0
+           l -6 0
+           l 0 4 Z"
+        fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="185" y="260" font-family="Arial" font-size="9" fill="black">8</text>
+
+  <!-- ПРАВАЯ КОЛОНКА: ОТВЁРТКИ -->
+  <rect x="325" y="185" width="20" height="95" rx="4" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="335" cy="200" r="8" fill="none" stroke="black" stroke-width="0.6"/>
+  <rect x="352" y="185" width="20" height="95" rx="4" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="362" cy="200" r="8" fill="none" stroke="black" stroke-width="0.6"/>
+  <rect x="378" y="185" width="16" height="95" rx="4" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="386" cy="200" r="6" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="365" y="292" font-family="Arial" font-size="7" fill="black" text-anchor="middle">SCREWDRIVERS</text>
+
+</svg>

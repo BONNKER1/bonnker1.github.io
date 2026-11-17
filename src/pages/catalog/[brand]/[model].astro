@@ -245,6 +245,7 @@ const payload = {
             <span>Итого</span>
             <strong data-price aria-live="polite">{formatPrice(priceFor(films[0], frontSet))}</strong>
           </div>
+          <p class="summary__savings" data-savings></p>
 
           <dl class="summary__list">
             <div>
@@ -273,6 +274,7 @@ const payload = {
             <Button href={ozonLink.href} variant="ghost" external>
               {ozonLink.exact ? 'Купить на Ozon' : 'Найти на Ozon'}
             </Button>
+            <button type="button" class="share-btn" data-share>Поделиться конфигурацией</button>
           </div>
 
           <p class="summary__note" data-wb-note hidden>
@@ -372,6 +374,7 @@ const payload = {
 
   const data: ConfigData = JSON.parse(dataEl.dataset.json);
   const priceEl = root.querySelector<HTMLElement>('[data-price]');
+  const savingsEl = root.querySelector<HTMLElement>('[data-savings]');
   const filmEl = root.querySelector<HTMLElement>('[data-summary-film]');
   const setEl = root.querySelector<HTMLElement>('[data-summary-set]');
   const vltEl = root.querySelector<HTMLElement>('[data-summary-vlt]');
@@ -399,6 +402,11 @@ const payload = {
     const price = windshield ? windshield.price : film.prices[set!.id as 'front' | 'rear' | 'full'];
 
     if (priceEl) priceEl.textContent = format(price);
+    if (savingsEl) {
+      const saved = 6000 - price;
+      savingsEl.textContent = saved > 0 ? `Экономия vs студии: ~${format(saved)}` : '';
+      savingsEl.hidden = saved <= 0;
+    }
     if (filmEl) filmEl.textContent = windshield ? 'Не влияет на цену' : film.name;
     if (setEl) setEl.textContent = windshield ? windshield.name : set!.name;
     if (vltEl) vltEl.textContent = `${vlt}%`;
@@ -467,6 +475,45 @@ const payload = {
     const threeCar = (window as unknown as { __threeCar?: { setTint: (value: number) => void } }).__threeCar;
     if (threeCar) threeCar.setTint(Number(vlt));
   }
+
+  // Читаем конфигурацию из URL (?film=...&set=...&vlt=...) — для шаринга.
+  const params = new URLSearchParams(window.location.search);
+  const pFilm = params.get('film');
+  const pSet = params.get('set');
+  const pVlt = params.get('vlt');
+  if (pFilm) {
+    const radio = root.querySelector<HTMLInputElement>(`input[name="film"][value="${pFilm}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (pSet) {
+    const radio = root.querySelector<HTMLInputElement>(`input[name="set"][value="${pSet}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (pVlt) {
+    const radio = root.querySelector<HTMLInputElement>(`input[name="vlt"][value="${pVlt}"]`);
+    if (radio) radio.checked = true;
+  }
+
+  const shareBtn = root.querySelector<HTMLButtonElement>('[data-share]');
+  shareBtn?.addEventListener('click', async () => {
+    const film = checkedValue('film');
+    const set = checkedValue('set');
+    const vlt = checkedValue('vlt');
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('film', film);
+    url.searchParams.set('set', set);
+    url.searchParams.set('vlt', vlt);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      shareBtn.textContent = 'Ссылка скопирована ✓';
+    } catch {
+      window.prompt('Скопируйте ссылку:', url.toString());
+    }
+    setTimeout(() => {
+      shareBtn.textContent = 'Поделиться конфигурацией';
+    }, 2000);
+  });
 
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach((input) => {
     input.addEventListener('change', update);
@@ -698,10 +745,41 @@ const payload = {
     gap: var(--space-2);
   }
 
+  .share-btn {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    font-size: var(--step--1);
+    cursor: pointer;
+    transition: border-color 160ms ease-out, color 160ms ease-out;
+  }
+
+  .share-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
   .summary__note {
     color: var(--color-muted);
     font-size: 0.78rem;
     line-height: 1.5;
+  }
+
+  .summary__savings {
+    margin: 0;
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    color: var(--color-accent);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+
+  .summary__savings[hidden] {
+    display: none;
   }
 
   .prose-note {

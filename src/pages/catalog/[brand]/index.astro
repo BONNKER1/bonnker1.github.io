@@ -68,6 +68,17 @@ const schemas = [
             enterkeyhint="search"
           />
         </div>
+        <div class="field brand-tools__field brand-tools__field--narrow">
+          <label for="brand-year">Год выпуска</label>
+          <select id="brand-year" data-year>
+            <option value="">Все годы</option>
+            {
+              [...new Set(brand.models.map((m) => m.years).filter(Boolean))]
+                .sort()
+                .map((y) => <option value={y}>{y}</option>)
+            }
+          </select>
+        </div>
         <p class="brand-tools__count">
           Показано <strong data-count>{brand.models.length}</strong> из {brand.models.length}
         </p>
@@ -141,20 +152,23 @@ const schemas = [
 
   const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-row]'));
   const search = document.querySelector<HTMLInputElement>('[data-search]');
+  const yearSelect = document.querySelector<HTMLSelectElement>('[data-year]');
   const count = document.querySelector<HTMLElement>('[data-count]');
   const empty = document.querySelector<HTMLElement>('[data-empty]');
 
   const index = rows.map((row) => {
     const text = (row.dataset.search ?? row.textContent ?? '').toLowerCase();
-    return { row, text, folded: fold(text), tokens: tokenize(text) };
+    const years = row.querySelector('.models__years')?.textContent?.trim() ?? '';
+    return { row, text, folded: fold(text), tokens: tokenize(text), years };
   });
 
   function applyFilter() {
     const query = search?.value ?? '';
+    const year = yearSelect?.value ?? '';
     let visible = 0;
 
-    index.forEach(({ row, text, folded, tokens }) => {
-      const show = matchesQuery(query, text, folded, tokens);
+    index.forEach(({ row, text, folded, tokens, years }) => {
+      const show = matchesQuery(query, text, folded, tokens) && (!year || years === year);
       row.hidden = !show;
       if (show) visible += 1;
     });
@@ -164,6 +178,7 @@ const schemas = [
   }
 
   search?.addEventListener('input', applyFilter);
+  yearSelect?.addEventListener('change', applyFilter);
   applyFilter();
 </script>
 
@@ -183,6 +198,20 @@ const schemas = [
 
   .brand-tools__field {
     flex: 1 1 16rem;
+  }
+
+  .brand-tools__field--narrow {
+    flex: 0 1 12rem;
+  }
+
+  .brand-tools__field select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font: inherit;
   }
 
   .brand-tools__count {

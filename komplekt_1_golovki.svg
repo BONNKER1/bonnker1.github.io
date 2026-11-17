@@ -1,0 +1,59 @@
+<svg width="400mm" height="300mm" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- ВНЕШНИЙ КОНТУР (РЕЗ) -->
+  <rect x="0" y="0" width="400" height="300" fill="none" stroke="red" stroke-width="1"/>
+
+  <!-- ЗАГОЛОВОК -->
+  <text x="200" y="18" font-family="Arial" font-size="12" fill="black" text-anchor="middle">SOCKET SET 1/2"</text>
+
+  <!-- ТРЕЩОТКА -->
+  <rect x="20" y="30" width="26" height="240" rx="8" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="33" cy="45" r="11" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="33" y="35" font-family="Arial" font-size="7" fill="black" text-anchor="middle">RATCHET</text>
+
+  <!-- УДЛИНИТЕЛЬ 125 -->
+  <rect x="60" y="30" width="18" height="180" rx="4" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="69" y="25" font-family="Arial" font-size="6" fill="black" text-anchor="middle">125</text>
+
+  <!-- УДЛИНИТЕЛЬ 250 -->
+  <rect x="90" y="30" width="18" height="240" rx="4" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="99" y="25" font-family="Arial" font-size="6" fill="black" text-anchor="middle">250</text>
+
+  <!-- КАРДАН -->
+  <rect x="120" y="30" width="40" height="18" rx="6" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="140" y="25" font-family="Arial" font-size="6" fill="black" text-anchor="middle">U-JOINT</text>
+
+  <!-- СЕТКА ГОЛОВОК (5 x 4 = 20 шт) -->
+  <!-- Ряд 1 (крупные 24-19) -->
+  <circle cx="190" cy="50" r="17" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="235" cy="50" r="16" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="278" cy="50" r="14" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="316" cy="50" r="13" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="352" cy="50" r="12" fill="none" stroke="black" stroke-width="0.6"/>
+
+  <!-- Ряд 2 -->
+  <circle cx="190" cy="100" r="12" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="235" cy="100" r="11" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="278" cy="100" r="10.5" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="316" cy="100" r="10" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="352" cy="100" r="9.5" fill="none" stroke="black" stroke-width="0.6"/>
+
+  <!-- Ряд 3 -->
+  <circle cx="190" cy="145" r="9" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="235" cy="145" r="8.5" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="278" cy="145" r="8.5" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="316" cy="145" r="8" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="352" cy="145" r="8" fill="none" stroke="black" stroke-width="0.6"/>
+
+  <!-- Ряд 4 -->
+  <circle cx="190" cy="190" r="7.5" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="235" cy="190" r="7.5" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="278" cy="190" r="7" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="316" cy="190" r="7" fill="none" stroke="black" stroke-width="0.6"/>
+  <circle cx="352" cy="190" r="6.5" fill="none" stroke="black" stroke-width="0.6"/>
+
+  <!-- БИТЫ / МЕЛОЧЬ -->
+  <rect x="190" y="235" width="170" height="12" rx="3" fill="none" stroke="black" stroke-width="0.6"/>
+  <rect x="190" y="255" width="170" height="12" rx="3" fill="none" stroke="black" stroke-width="0.6"/>
+  <text x="275" y="285" font-family="Arial" font-size="7" fill="black" text-anchor="middle">BITS / ADAPTERS</text>
+
+</svg>

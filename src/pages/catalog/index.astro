@@ -81,6 +81,7 @@ const schemas = [
           <button type="button" data-suggest="Солярис">Солярис</button>
           <button type="button" data-suggest="2109">2109</button>
           <button type="button" data-suggest="Land Cruiser">Land Cruiser</button>
+          <button type="button" data-lucky>Мне повезёт ✨</button>
         </div>
       </div>
 
@@ -290,6 +291,17 @@ const schemas = [
     });
   });
 
+  document.querySelector<HTMLButtonElement>('[data-lucky]')?.addEventListener('click', async () => {
+    try {
+      const models = await loadIndex();
+      if (!models.length) return;
+      const pick = models[Math.floor(Math.random() * models.length)];
+      window.location.href = pick.href;
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
   const params = new URLSearchParams(window.location.search);
   const paramBrand = params.get('brand');
   const paramModel = params.get('model');
@@ -347,6 +359,13 @@ const schemas = [
   .catalog-search__suggest button:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
+  }
+
+  .catalog-search__suggest button[data-lucky] {
+    border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    color: var(--color-accent);
+    font-weight: 600;
   }
 
   .catalog-block {

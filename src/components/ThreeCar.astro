@@ -1,6 +1,6 @@
 ---
 interface Props {
-  /** Текущая степень затемнения: 5 | 15 | 20 | 35 | 50 | 70. */
+  /** Текущая степень затемнения: 5 | 15 | 35 | 50. */
   vlt?: number;
 }
 
@@ -37,10 +37,8 @@ const { vlt = 15 } = Astro.props;
   const TINT: Record<number, { opacity: number; color: number }> = {
     5: { opacity: 0.72, color: 0x050505 },  // самая тёмная
     15: { opacity: 0.52, color: 0x121212 },
-    20: { opacity: 0.44, color: 0x1c1c1c },
     35: { opacity: 0.32, color: 0x404040 },
-    50: { opacity: 0.21, color: 0x747474 },
-    70: { opacity: 0.1, color: 0xb0b0b0 },  // самая светлая
+    50: { opacity: 0.21, color: 0x747474 },  // самая светлая
   };
 
   function glassMeshes(root: THREE.Object3D): THREE.Mesh[] {
