@@ -1167,7 +1167,7 @@ export interface CarModel {
   /** Артикулы Wildberries по типу плёнки — для прямых ссылок на товар. */
   wb?: Partial<Record<FilmId | 'windshield', number>>;
   /** Артикулы Wildberries по проценту затемнения: плёнка → % → товар. */
-  wbVlt?: Partial<Record<FilmId, Record<number, number>>>;
+  wbVlt?: Partial<Record<FilmId | 'windshield', Record<number, number>>>;
   /** Товары Ozon: тип плёнки → комплект → SKU. */
   ozon?: Partial<Record<FilmId, Partial<Record<SetId | 'windshield', OzonOffer>>>>;
 }
