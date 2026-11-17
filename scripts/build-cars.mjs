@@ -228,6 +228,12 @@ const WB_VARIANTS_FILE = 'import/wb-variants.json';
 const WB_VARIANTS = fs.existsSync(WB_VARIANTS_FILE)
   ? JSON.parse(fs.readFileSync(WB_VARIANTS_FILE, 'utf8'))
   : {};
+
+// Варианты (процент затемнения) карточек Ozon — из экспорта личного кабинета.
+const OZON_VARIANTS_FILE = 'import/ozon-variants.json';
+const OZON_VARIANTS = fs.existsSync(OZON_VARIANTS_FILE)
+  ? JSON.parse(fs.readFileSync(OZON_VARIANTS_FILE, 'utf8'))
+  : {};
 const OZON_FILE = 'import/ozon-api.json';
 const ozonData = fs.existsSync(OZON_FILE)
   ? JSON.parse(fs.readFileSync(OZON_FILE, 'utf8'))
@@ -281,6 +287,16 @@ function attachOzon(entry, product) {
     if (Number(value) && sku) vlt[Number(value)] = sku;
   }
   const prev = byFilm[place];
+  
+  // Добавляем проценты из экспорта Ozon, если они там есть
+  const variant = OZON_VARIANTS[String(product.id)];
+  if (variant) {
+    const vltNum = Number(String(variant).replace('%', ''));
+    if (vltNum) {
+      vlt[vltNum] = Number(product.id);
+    }
+  }
+
   if (!prev) {
     byFilm[place] = { id: Number(product.id), vlt };
     if (place === 'windshield') entry.ozonWindshieldPhrase = storePhrase(product.name);
