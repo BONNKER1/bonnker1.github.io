@@ -1033,8 +1033,6 @@ for (const entry of entries.values()) {
 
 const byBrand = new Map();
 for (const e of entries.values()) {
-  // Убираем модели, которых вообще нет в наличии/ассортименте (нет ни одной ссылки WB/Ozon).
-  if (linksCount(e) === 0) continue;
   if (!byBrand.has(e.brandSlug)) byBrand.set(e.brandSlug, { slug: e.brandSlug, name: e.brandName, models: [] });
   byBrand.get(e.brandSlug).models.push(e);
 }
@@ -1043,14 +1041,12 @@ for (const brand of byBrand.values()) {
   brand.models.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'));
 }
 
-const brandList = [...byBrand.values()]
-  .filter((brand) => brand.models.length > 0)
-  .sort((a, b) => {
-    // Lada — первая: с неё чаще всего начинают выбор.
-    if (a.slug === 'lada') return -1;
-    if (b.slug === 'lada') return 1;
-    return a.name.localeCompare(b.name, 'ru');
-  });
+const brandList = [...byBrand.values()].sort((a, b) => {
+  // Lada — первая: с неё чаще всего начинают выбор.
+  if (a.slug === 'lada') return -1;
+  if (b.slug === 'lada') return 1;
+  return a.name.localeCompare(b.name, 'ru');
+});
 
 // «Популярные» — витрина на главной: самые спрашиваемые лекала.
 const POPULAR = [
@@ -1284,7 +1280,7 @@ console.log(
   'марок:',
   brandList.length,
   '| моделей:',
-  brandList.reduce((sum, b) => sum + b.models.length, 0),
+  entries.size,
   '| из лекал добавлено:',
   lekaloAdded,
   '| объединено:',
@@ -1299,8 +1295,6 @@ console.log(
   duplicatesMerged,
   '| товаров Ozon привязано:',
   ozonAttached,
-  '| без товаров (убрано):',
-  [...entries.values()].filter((e) => linksCount(e) === 0).length,
 );
 console.log('популярные:', [...popular].join(', '));
 fs.writeFileSync('import/skipped.txt', skipped.join('\n'), 'utf8');
