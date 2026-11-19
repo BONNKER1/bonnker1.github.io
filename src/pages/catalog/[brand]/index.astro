@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
-import { brands, modelSearchText, type CarBrand } from '../../../data/cars';
-import { modelOzonLink, modelWbLink } from '../../../lib/marketplaces';
+import { brands, type CarBrand } from '../../../data/cars';
+import { chunkModels, renderModelLink, renderModelRow } from '../../../lib/brand-models';
 import { breadcrumbsSchema } from '../../../lib/schema';
 
 export function getStaticPaths() {
@@ -18,6 +18,12 @@ interface Props {
 
 const { brand } = Astro.props as Props;
 const brandLabel = brand.name.replace(/\s*\([^)]*\)/, '');
+
+const chunks = chunkModels(brand.models);
+const firstPage = chunks[0] ?? [];
+const hasMore = chunks.length > 1;
+const rowsHtml = firstPage.map((model) => renderModelRow(brand, model)).join('');
+const linksHtml = brand.models.map((model) => renderModelLink(brand, model)).join('');
 
 const schemas = [
   breadcrumbsSchema([
@@ -80,7 +86,7 @@ const schemas = [
           </select>
         </div>
         <p class="brand-tools__count">
-          Показано <strong data-count>{brand.models.length}</strong> из {brand.models.length}
+          Показано <strong data-count>{firstPage.length}</strong> из {brand.models.length}
         </p>
       </div>
 
@@ -93,51 +99,34 @@ const schemas = [
               <th scope="col" class="models__buy-head">Купить</th>
             </tr>
           </thead>
-          <tbody>
-            {
-              brand.models.map((model) => {
-                const wb = modelWbLink(brand, model);
-                const ozon = modelOzonLink(brand, model);
-                const href = `/catalog/${brand.slug}/${model.slug}/`;
-                return (
-                  <tr data-row data-search={modelSearchText(brand, model)}>
-                    <td class="models__name">
-                      <a href={href}>{model.name}</a>
-                      {model.body && <span class="models__body">{model.body}</span>}
-                    </td>
-                    <td class="models__years">{model.years ?? '—'}</td>
-                    <td class="models__buy">
-                      <a
-                        class="mkt mkt--wb"
-                        href={wb.href}
-                        target="_blank"
-                        rel="noopener nofollow"
-                        title={wb.exact ? 'Товар на Wildberries' : 'Поиск на Wildberries'}
-                      >
-                        WB
-                      </a>
-                      <a
-                        class="mkt mkt--oz"
-                        href={ozon.href}
-                        target="_blank"
-                        rel="noopener nofollow"
-                        title={ozon.exact ? 'Товар на Ozon' : 'Поиск на Ozon'}
-                      >
-                        Ozon
-                      </a>
-                    </td>
-                  </tr>
-                );
-              })
-            }
-          </tbody>
+          <tbody data-rows set:html={rowsHtml}></tbody>
         </table>
+      </div>
+
+      <div class="brand-more">
+        <button
+          type="button"
+          class="btn btn--secondary"
+          data-more
+          data-json={`/catalog/${brand.slug}/models.json`}
+          hidden={!hasMore}
+        >
+          Показать ещё
+        </button>
+        <p class="brand-more__note" data-more-note hidden>
+          Подгружаем остальные модели…
+        </p>
       </div>
 
       <p class="empty" data-empty hidden>
         Такой модели нет в списке. <a href="/kontakty/">Напишите нам</a> — проверим лекало по вашей
         марке и году выпуска.
       </p>
+
+      <details class="brand-all">
+        <summary>Все модели {brandLabel} — быстрые ссылки ({brand.models.length})</summary>
+        <ul class="brand-all__list" set:html={linksHtml}></ul>
+      </details>
 
       <p class="brand-note">
         Нет вашей модели? В базе есть лекала почти всех марок — <a href="/catalog/">вернитесь в каталог</a>
@@ -150,19 +139,40 @@ const schemas = [
 <script>
   import { matchesQuery, fold, tokenize } from '../../../lib/search';
 
-  const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-row]'));
+  const tbody = document.querySelector<HTMLElement>('[data-rows]');
   const search = document.querySelector<HTMLInputElement>('[data-search]');
   const yearSelect = document.querySelector<HTMLSelectElement>('[data-year]');
   const count = document.querySelector<HTMLElement>('[data-count]');
   const empty = document.querySelector<HTMLElement>('[data-empty]');
+  const moreBtn = document.querySelector<HTMLButtonElement>('[data-more]');
+  const moreNote = document.querySelector<HTMLElement>('[data-more-note]');
 
-  const index = rows.map((row) => {
-    const text = (row.dataset.search ?? row.textContent ?? '').toLowerCase();
-    const years = row.querySelector('.models__years')?.textContent?.trim() ?? '';
-    return { row, text, folded: fold(text), tokens: tokenize(text), years };
-  });
+  interface RowEntry {
+    row: HTMLElement;
+    text: string;
+    folded: string;
+    tokens: string[];
+    years: string;
+  }
 
-  function applyFilter() {
+  interface ChunkPayload {
+    more?: string[][];
+  }
+
+  let index: RowEntry[] = [];
+  let payload: ChunkPayload | null = null;
+  let nextChunk = 0;
+  let busy = false;
+
+  function indexRows(): void {
+    index = Array.from(document.querySelectorAll<HTMLElement>('[data-row]')).map((row) => {
+      const text = (row.dataset.search ?? row.textContent ?? '').toLowerCase();
+      const years = row.querySelector('.models__years')?.textContent?.trim() ?? '';
+      return { row, text, folded: fold(text), tokens: tokenize(text), years };
+    });
+  }
+
+  function applyFilter(): void {
     const query = search?.value ?? '';
     const year = yearSelect?.value ?? '';
     let visible = 0;
@@ -177,8 +187,79 @@ const schemas = [
     if (empty) empty.hidden = visible !== 0;
   }
 
-  search?.addEventListener('input', applyFilter);
-  yearSelect?.addEventListener('change', applyFilter);
+  async function loadPayload(): Promise<ChunkPayload> {
+    if (!payload) {
+      const url = moreBtn?.dataset.json ?? '';
+      const data: ChunkPayload = await fetch(url)
+        .then((response) => (response.ok ? response.json() : { more: [] }))
+        .catch(() => ({ more: [] }));
+      payload = data;
+    }
+    return payload ?? { more: [] };
+  }
+
+  function appendChunk(rows: string[]): void {
+    tbody?.insertAdjacentHTML('beforeend', rows.join(''));
+    indexRows();
+  }
+
+  /** Догружает все оставшиеся страницы — нужно, когда включён фильтр. */
+  async function loadAll(): Promise<void> {
+    const data = await loadPayload();
+    const chunks = data.more ?? [];
+    while (nextChunk < chunks.length) {
+      appendChunk(chunks[nextChunk]);
+      nextChunk += 1;
+    }
+    if (moreBtn) moreBtn.hidden = true;
+  }
+
+  async function showMore(): Promise<void> {
+    if (!moreBtn || busy) return;
+    busy = true;
+    moreBtn.disabled = true;
+    if (moreNote) moreNote.hidden = false;
+
+    const data = await loadPayload();
+    const chunks = data.more ?? [];
+    const chunk = chunks[nextChunk];
+
+    if (chunk) {
+      appendChunk(chunk);
+      nextChunk += 1;
+      applyFilter();
+    }
+
+    if (moreNote) moreNote.hidden = true;
+    moreBtn.disabled = false;
+    if (nextChunk >= chunks.length) {
+      moreBtn.hidden = true;
+    } else {
+      moreBtn.textContent = 'Показать ещё';
+    }
+    busy = false;
+  }
+
+  let filterTimer = 0;
+  function onFilterChange(): void {
+    window.clearTimeout(filterTimer);
+    filterTimer = window.setTimeout(async () => {
+      const active = (search?.value ?? '').trim() !== '' || (yearSelect?.value ?? '') !== '';
+      // С активным фильтом подгружаем всё — иначе поиск не увидит моделей ниже.
+      if (active && nextChunk < (payload?.more?.length ?? Number.POSITIVE_INFINITY)) {
+        await loadAll();
+      }
+      applyFilter();
+    }, 200);
+  }
+
+  moreBtn?.addEventListener('click', () => {
+    void showMore();
+  });
+  search?.addEventListener('input', onFilterChange);
+  yearSelect?.addEventListener('change', onFilterChange);
+
+  indexRows();
   applyFilter();
 </script>
 
@@ -333,6 +414,20 @@ const schemas = [
     color: var(--color-muted);
   }
 
+  .brand-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+
+  .brand-more__note {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
   .empty {
     margin-top: var(--space-6);
     padding: var(--space-6);
@@ -343,8 +438,47 @@ const schemas = [
   }
 
   .empty a,
-  .brand-note a {
+  .brand-note a,
+  .brand-all :global(a) {
     color: var(--color-accent);
+  }
+
+  .brand-all {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-muted);
+    font-size: var(--step--1);
+  }
+
+  .brand-all summary {
+    cursor: pointer;
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .brand-all__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Ссылки подставлены через set:html — у них нет scope-атрибута Astro. */
+  .brand-all__list :global(li) {
+    list-style: none;
+  }
+
+  .brand-all__list :global(a) {
+    text-decoration: none;
+  }
+
+  .brand-all__list :global(a:hover) {
+    text-decoration: underline;
   }
 
   .brand-note {
