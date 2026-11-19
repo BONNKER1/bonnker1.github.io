@@ -8,15 +8,144 @@ import Button from '../components/Button.astro';
       <p class="eyebrow">404</p>
       <h1>Такой страницы нет</h1>
       <p class="lead">
-        Возможно, ссылка устарела. Начните с каталога — там все модели и комплекты.
+        Возможно, ссылка устарела или модель убрана из каталога. Начните с каталога —
+        там все модели и комплекты.
       </p>
       <div class="lost__actions">
         <Button href="/catalog/" variant="primary">Перейти в каталог</Button>
         <Button href="/" variant="secondary">На главную</Button>
       </div>
+
+      <div class="lost__suggest" data-lost-suggest hidden>
+        <h2 class="lost__suggest-title" data-lost-title>Возможно, вы искали</h2>
+        <ul class="lost__list" data-lost-list></ul>
+      </div>
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  type Index = {
+    brands: [string, string, string][];
+    models: [number, string, string, string, string][];
+  };
+
+  const wrap = document.querySelector<HTMLElement>('[data-lost-suggest]');
+  const listEl = document.querySelector<HTMLElement>('[data-lost-list]');
+  const titleEl = document.querySelector<HTMLElement>('[data-lost-title]');
+
+  const norm = (value: string): string =>
+    value
+      .toLowerCase()
+      .replace(/ё/g, 'е')
+      .replace(/[^a-zа-я0-9]+/gi, ' ')
+      .trim();
+
+  /** грубое сходство строк: 0 — ничего общего, 100 — полное совпадение. */
+  const score = (a: string, b: string): number => {
+    const na = norm(a);
+    const nb = norm(b);
+    if (!na || !nb) return 0;
+    if (na === nb) return 100;
+    if (nb.includes(na) || na.includes(nb)) return 60;
+    const tokens = new Set(na.split(' '));
+    const parts = nb.split(' ');
+    const hits = parts.filter((t) => tokens.has(t)).length;
+    return Math.round((hits / Math.max(1, parts.length)) * 50);
+  };
+
+  const render = (items: { href: string; name: string; hint?: string }[]): void => {
+    if (!listEl || !wrap || items.length === 0) return;
+    listEl.innerHTML = '';
+    for (const item of items) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = item.href;
+      a.textContent = item.name;
+      li.appendChild(a);
+      if (item.hint) {
+        const span = document.createElement('span');
+        span.className = 'lost__hint';
+        span.textContent = item.hint;
+        li.appendChild(span);
+      }
+      listEl.appendChild(li);
+    }
+    wrap.hidden = false;
+  };
+
+  const build = (index: Index): void => {
+    const match = location.pathname.match(/^\/catalog\/([^/]+)(?:\/([^/]+))?\/?$/);
+    if (!match) return;
+    const [, brandSlug, modelSlug] = match;
+
+    const brandIndex = index.brands.findIndex((b) => b[0] === brandSlug);
+    const brand = brandIndex >= 0 ? index.brands[brandIndex] : undefined;
+
+    if (brand && modelSlug) {
+      // Модель не нашлась — ищем похожие внутри этой же марки.
+      const models = index.models
+        .filter((m) => m[0] === brandIndex)
+        .map((m) => ({ m, s: Math.max(score(m[1], modelSlug), score(m[2], modelSlug)) }))
+        .filter((x) => x.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 5);
+      if (models.length === 0) return;
+      if (titleEl) titleEl.textContent = `Похожие модели ${brand[1]}`;
+      render(
+        models.map(({ m }) => ({
+          href: `/catalog/${brand[0]}/${m[1]}/`,
+          name: m[2],
+          hint: [m[3], m[4]].filter(Boolean).join(' · '),
+        })),
+      );
+      return;
+    }
+
+    if (brand) {
+      // Страница марки ушла — предлагаем марку и её модели.
+      const models = index.models.filter((m) => m[0] === brandIndex).slice(0, 5);
+      if (titleEl) titleEl.textContent = `Модели ${brand[1]}`;
+      render([
+        { href: `/catalog/${brand[0]}/`, name: `Все модели ${brand[1]}` },
+        ...models.map((m) => ({
+          href: `/catalog/${brand[0]}/${m[1]}/`,
+          name: m[2],
+          hint: [m[3], m[4]].filter(Boolean).join(' · '),
+        })),
+      ]);
+      return;
+    }
+
+    // Марки тоже нет — ищем похожую по названию, иначе показываем крупнейшие разделы.
+    const similar = index.brands
+      .map((b) => ({ b, s: Math.max(score(b[0], brandSlug), score(b[1], brandSlug)) }))
+      .sort((a, b) => b.s - a.s)
+      .filter((x) => x.s > 0)
+      .slice(0, 3);
+    const picks = similar.length
+      ? similar
+      : index.brands
+          .map((b, i) => ({ b, count: index.models.filter((m) => m[0] === i).length }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3);
+    if (titleEl) {
+      titleEl.textContent = similar.length ? 'Похожие марки' : 'Популярные марки';
+    }
+    render(picks.map(({ b }) => ({ href: `/catalog/${b[0]}/`, name: b[1] })));
+  };
+
+  if (wrap && listEl) {
+    fetch('/catalog-index.json')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: Index | null) => {
+        if (data) build(data);
+      })
+      .catch(() => {
+        /* индекс недоступен — остаются стандартные ссылки */
+      });
+  }
+</script>
 
 <style>
   .lost {
@@ -31,5 +160,50 @@ import Button from '../components/Button.astro';
     flex-wrap: wrap;
     gap: var(--space-3);
     margin-top: var(--space-4);
+  }
+
+  .lost__suggest {
+    width: 100%;
+    max-width: 42rem;
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .lost__suggest-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .lost__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Список подсказок собирается скриптом, поэтому элементы без scope-атрибута
+     Astro — стили для них задаём через :global(). */
+  .lost__list :global(li) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .lost__list :global(a) {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .lost__list :global(a:hover) {
+    text-decoration: underline;
+  }
+
+  :global(.lost__hint) {
+    color: var(--color-muted);
+    font-size: var(--step--1);
   }
 </style>

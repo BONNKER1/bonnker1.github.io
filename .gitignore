@@ -8,3 +8,8 @@ dist/
 Thumbs.db
 *.log
 import/skipped.txt
+
+# Посторонние рабочие файлы, в репозитории им не место (на диске остаются).
+farm-cam-game/
+lozh_*_preview.jpg
+packaging-*.zip

@@ -8,6 +8,10 @@ const { vlt = 15 } = Astro.props;
 ---
 
 <div class="three-car" data-three-vlt={vlt}>
+  <p class="three-car__loading" data-three-loading>
+    <span class="three-car__spinner" aria-hidden="true"></span>
+    <span>Загружаем 3D-модель…</span>
+  </p>
   <p class="three-car__error" hidden>
     Не удалось загрузить 3D-модель. Проверьте, что файл <code>/models/porsche911.glb</code>
     доступен, и попробуйте обновить страницу.
@@ -16,11 +20,6 @@ const { vlt = 15 } = Astro.props;
 </div>
 
 <script>
-  import * as THREE from 'three';
-  import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-  import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-
   interface CarApi {
     setTint: (value: number) => void;
     dispose: () => void;
@@ -32,232 +31,69 @@ const { vlt = 15 } = Astro.props;
     }
   }
 
-  const MODEL_URL = '/models/porsche911.glb';
-
-  const TINT: Record<number, { opacity: number; color: number }> = {
-    5: { opacity: 0.72, color: 0x050505 },  // самая тёмная
-    15: { opacity: 0.52, color: 0x121212 },
-    35: { opacity: 0.32, color: 0x404040 },
-    50: { opacity: 0.21, color: 0x747474 },  // самая светлая
-  };
-
-  function glassMeshes(root: THREE.Object3D): THREE.Mesh[] {
-    const found = new Set<THREE.Mesh>();
-    const include = /glass|window|windshield|windscreen/i;
-    const exclude = /light|lamp|head|fog|tail|indicator|signal|reflector|bulb|lens/i;
-    const walk = (object: THREE.Object3D): void => {
-      if (object instanceof THREE.Mesh) {
-        const name = object.name || '';
-        if (include.test(name) && !exclude.test(name)) found.add(object);
-      }
-      for (const child of object.children) walk(child);
-    };
-    walk(root);
-    return [...found];
-  }
-
-  function applyTint(scene: THREE.Scene, value: number): void {
-    const vlt = Number.isFinite(value) ? Math.round(value) : 15;
-    const key = Object.keys(TINT).includes(String(vlt)) ? vlt : 15;
-    const { opacity, color } = TINT[key];
-    for (const mesh of glassMeshes(scene)) {
-      const data = mesh.userData as { __tintedMaterials?: THREE.Material[] };
-      if (!data.__tintedMaterials) {
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        data.__tintedMaterials = materials.map((material) => {
-          const mat = material.clone() as THREE.MeshPhysicalMaterial | THREE.MeshStandardMaterial;
-          mat.transparent = true;
-          if ('roughness' in mat) mat.roughness = 0.08;
-          mat.depthWrite = false;
-          mat.needsUpdate = true;
-          return mat;
-        });
-        mesh.material = Array.isArray(mesh.material) ? data.__tintedMaterials : data.__tintedMaterials[0];
-      }
-      for (const material of data.__tintedMaterials) {
-        material.opacity = opacity;
-        (material as THREE.MeshPhysicalMaterial).color.setHex(color);
-        material.needsUpdate = true;
-      }
-    }
-  }
-
-  function init(container: HTMLElement): CarApi {
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0x02060a);
-    container.appendChild(renderer.domElement);
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x02060a);
-
-    const camera = new THREE.PerspectiveCamera(
-      42,
-      container.clientWidth / Math.max(1, container.clientHeight),
-      0.05,
-      200,
-    );
-    camera.position.set(4.5, 2.6, 6.5);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const directional = new THREE.DirectionalLight(0xffffff, 1.6);
-    directional.position.set(4, 6, 4);
-    scene.add(directional);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x22303c, 0.5));
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 1.5;
-    controls.maxDistance = 25;
-    controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.set(0, 1.2, 0);
-    controls.enablePan = false;
-    // На телефоне вертикальный свайп листает страницу, горизонтальный — вращает модель.
-    renderer.domElement.style.touchAction = 'pan-y';
-
-    // Перерисовываем сцену только при изменениях: экономит батарею и не греет телефон.
-    let needsRender = true;
-    const requestRender = (): void => {
-      needsRender = true;
-    };
-    controls.addEventListener('change', requestRender);
-
-    const loader = new GLTFLoader();
-    let disposed = false;
-    loader.load(
-      MODEL_URL,
-      (gltf: GLTF) => {
-        if (disposed) return;
-        const model = gltf.scene;
-        scene.add(model);
-
-        // Центрируем и масштабируем модель, чтобы она хорошо помещалась в кадр.
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
-
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const targetSize = 4; // целевой размер модели в сцене
-        const scale = (targetSize / maxDim) * 30; // заметно увеличить модель
-        model.scale.setScalar(scale);
-
-        // Пересчитываем границы после масштаба и центрирования.
-        const scaledBox = new THREE.Box3().setFromObject(model);
-        const scaledSize = scaledBox.getSize(new THREE.Vector3());
-        const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-        const scaledMax = Math.max(scaledSize.x, scaledSize.y, scaledSize.z) || 1;
-
-        camera.position.copy(scaledCenter).add(
-          new THREE.Vector3(0.9, 0.55, 1).normalize().multiplyScalar(scaledMax * 1.6),
-        );
-        camera.near = 0.01;
-        camera.far = Math.max(2000, scaledMax * 50);
-        camera.updateProjectionMatrix();
-        controls.target.copy(scaledCenter);
-        controls.minDistance = Math.max(0.5, scaledMax * 0.4);
-        controls.maxDistance = scaledMax * 8;
-        controls.update();
-
-        scene.fog = new THREE.Fog(0x02060a, scaledMax * 2.5, scaledMax * 12);
-
-        // Tron-style grid floor
-        const gridSize = Math.max(120, scaledMax * 12);
-        const gridDiv = 80;
-        const grid = new THREE.GridHelper(gridSize, gridDiv, 0x00eaff, 0x004b66);
-        const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
-        for (const m of gridMaterials) {
-          m.transparent = true;
-          m.opacity = 0.55;
-        }
-        grid.position.y = scaledBox.min.y - 0.02;
-        scene.add(grid);
-
-        // Светящаяся плоскость под сеткой для "неонового" эффекта
-        const glowGeo = new THREE.PlaneGeometry(gridSize, gridSize);
-        const glowMat = new THREE.MeshBasicMaterial({
-          color: 0x001018,
-          transparent: true,
-          opacity: 0.65,
-          side: THREE.DoubleSide,
-        });
-        const glowPlane = new THREE.Mesh(glowGeo, glowMat);
-        glowPlane.rotation.x = -Math.PI / 2;
-        glowPlane.position.y = grid.position.y - 0.01;
-        scene.add(glowPlane);
-
-        applyTint(scene, container.getAttribute('data-three-vlt')
-          ? Number(container.getAttribute('data-three-vlt'))
-          : 15);
-        requestRender();
-      },
-      undefined,
-      (error: unknown) => {
-        console.error('[ThreeCar] Не удалось загрузить 3D модель Porsche 911:', error);
-        const errorEl = container.querySelector<HTMLElement>('.three-car__error');
-        if (errorEl) errorEl.hidden = false;
-      },
-    );
-
-    let rafId = 0;
-    const tick = (): void => {
-      if (disposed) return;
-      rafId = requestAnimationFrame(tick);
-      if (!needsRender) return;
-      needsRender = false;
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    tick();
-
-    const resize = (): void => {
-      const width = container.clientWidth || 1;
-      const height = Math.max(1, container.clientHeight);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-      requestRender();
-    };
-    resize();
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(container);
-
-    const dispose = (): void => {
-      disposed = true;
-      cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
-      controls.dispose();
-      scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          for (const material of materials) material.dispose();
-        }
-      });
-      renderer.dispose();
-      container.removeChild(renderer.domElement);
-    };
-
-    const setTint = (value: number): void => {
-      applyTint(scene, value);
-      requestRender();
-    };
-
-    (window as unknown as { __threeCar?: CarApi }).__threeCar = { setTint, dispose };
-
-    return { setTint, dispose };
-  }
-
   const container = document.querySelector<HTMLElement>('.three-car');
+
   if (container) {
-    const api = init(container);
+    let api: CarApi | null = null;
+    let started = false;
+    let desiredVlt = Number(container.getAttribute('data-three-vlt') || 15);
+
+    const loadingEl = container.querySelector<HTMLElement>('[data-three-loading]');
+    const errorEl = container.querySelector<HTMLElement>('.three-car__error');
+
+    const showError = (): void => {
+      if (loadingEl) loadingEl.hidden = true;
+      if (errorEl) errorEl.hidden = false;
+    };
+
+    /**
+     * Запускаем 3D только тогда, когда до него дошли. Модуль с three.js и сама
+     * модель (~15 МБ) грузятся отдельным запросом и не блокируют первый экран.
+     */
+    const start = async (): Promise<void> => {
+      if (started) return;
+      started = true;
+      try {
+        const { initCar } = await import('../scripts/three-car');
+        api = initCar(container, {
+          vlt: desiredVlt,
+          onLoaded: () => {
+            container.classList.add('is-ready');
+            if (loadingEl) loadingEl.hidden = true;
+          },
+          onError: showError,
+        });
+        window.__threeCar = api;
+      } catch (error) {
+        console.error('[ThreeCar] Не удалось загрузить 3D-модуль:', error);
+        showError();
+      }
+    };
+
+    // Степень затемнения может смениться до загрузки модели — запоминаем её
+    // в атрибуте и применяем сразу после инициализации сцены.
     const observer = new MutationObserver(() => {
       const raw = container.getAttribute('data-three-vlt');
-      api.setTint(raw === null ? 15 : Number(raw));
+      desiredVlt = raw === null ? 15 : Number(raw);
+      api?.setTint(desiredVlt);
     });
     observer.observe(container, { attributes: true, attributeFilter: ['data-three-vlt'] });
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            io.disconnect();
+            void start();
+          }
+        },
+        // Запас в 400px: модель подгружается чуть раньше, чем до неё доскроллили.
+        { rootMargin: '400px 0px' },
+      );
+      io.observe(container);
+    } else {
+      void start();
+    }
   }
 </script>
 
@@ -293,8 +129,48 @@ const { vlt = 15 } = Astro.props;
   }
 
   @media (max-width: 899px) {
-    .three-car__hint {
+    .three-car.is-ready .three-car__hint {
       display: block;
+    }
+  }
+
+  .three-car__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .three-car__loading[hidden] {
+    display: none;
+  }
+
+  .three-car__spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: three-car-spin 0.9s linear infinite;
+  }
+
+  @keyframes three-car-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .three-car__spinner {
+      animation-duration: 3s;
     }
   }
 
